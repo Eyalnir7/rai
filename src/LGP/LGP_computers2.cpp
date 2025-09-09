@@ -17,7 +17,7 @@
 
 rai::LGPComp2_root::
     LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton)
-    : ComputeNode(0), C(_C), tamp(_tamp) {
+    : GittinsNode(0), C(_C), tamp(_tamp) {
     // useBroadCollisions(useBroadCollisions),
     // explicitCollisions(explicitCollisions),
     // explicitLift(explicitLift) {
@@ -43,8 +43,14 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_root::createNewChild(int i) {
 
 //===========================================================================
 
-rai::LGPComp2_Skeleton::LGPComp2_Skeleton(rai::LGPComp2_root* _root, int num) : ComputeNode(_root), root(_root), num(num) {
+rai::LGPComp2_Skeleton::LGPComp2_Skeleton(rai::LGPComp2_root* _root, int num) : GittinsNode(_root), root(_root), num(num) {
   name <<"LGPComp2_Skeleton#"<<num;
+  if(_root->info->solver == "GITTINS"){
+    needsWidening = false;
+  }
+  else{
+    needsWidening = true;
+  }
 }
 
 // rai::LGPComp2_Skeleton::LGPComp2_Skeleton(rai::LGPComp2_root* _root, const rai::Skeleton& _skeleton) : ComputeNode(_root), root(_root), skeleton(_skeleton) {
@@ -124,7 +130,7 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_Skeleton::createNewChild(int i) 
 //===========================================================================
 
 rai::LGPComp2_PoseBounds::LGPComp2_PoseBounds(rai::LGPComp2_Skeleton* _sket, int rndSeed)
-  : ComputeNode(_sket), sket(_sket), seed(rndSeed) {
+  : GittinsNode(_sket), sket(_sket), seed(rndSeed) {
   name <<"LGPComp2_PoseBounds#"<<seed;
 }
 
@@ -168,7 +174,7 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_PoseBounds::createNewChild(int i
 //===========================================================================
 
 rai::LGPComp2_FactorBounds::LGPComp2_FactorBounds(rai::LGPComp2_Skeleton* _sket, int rndSeed)
-  : ComputeNode(_sket), sket(_sket), seed(rndSeed) {
+  : GittinsNode(_sket), sket(_sket), seed(rndSeed) {
   name <<"LGPComp2_FactorBounds#"<<seed;
 
   NIY; //komoWaypoints.clone(*sket->skeleton.komoWaypoints);
@@ -219,14 +225,15 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_FactorBounds::createNewChild(int
 //===========================================================================
 
 rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int rndSeed)
-  : ComputeNode(_sket), sket(_sket), seed(rndSeed) {
+  : GittinsNode(_sket), sket(_sket), seed(rndSeed) {
   name <<"LGPComp2_Waypoints#"<<seed;
+  taskPlan = TaskPlan(sket->actionSequence);
 
   LGPComp2_root* root=sket->root;
 
   komoWaypoints = root->tamp.get_waypointsProblem(root->C, sket->actionSequence);
 
-  //rnd.seed(rndSeed);
+  rnd.seed(rndSeed);
   komoWaypoints->initRandom(0);
   if(root->verbose()>2){
     // cout <<komoWaypoints->report(true,true, false) <<endl;
@@ -239,6 +246,12 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
   sol.setInitialization(komoWaypoints->x);
 
   // gsol.setProblem(komoWaypoints->nlp_FactoredTime());
+}
+
+rai::TaskPlan rai::LGPComp2_Waypoints::getTaskPlan() {
+  if(!taskPlan.empty)  return taskPlan;
+  taskPlan = TaskPlan(sket->actionSequence);
+  return taskPlan;
 }
 
 void rai::LGPComp2_Waypoints::untimedCompute() {
@@ -306,7 +319,7 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_Waypoints::createNewChild(int i)
 //===========================================================================
 
 rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoints* _ways, uint _t)
-  : ComputeNode(_par), ways(_ways), t(_t) {
+  : GittinsNode(_par), ways(_ways), sket(_ways->sket), t(_t) {
   if(!t) CHECK_EQ(_par, _ways, "");
   name <<"LGPComp2_RRTpath#" <<ways->seed <<'.' <<t;
   LGPComp2_root* root = ways->sket->root;
@@ -328,6 +341,18 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 
   if(root->verbose()>1) rrt->opt.verbose=root->verbose()-2;
   rrt->opt.maxIters = root->info->rrtStopEvals;
+}
+
+rai::TaskPlan rai::LGPComp2_RRTpath::getTaskPlan() {
+  if(!taskPlan.empty)  return taskPlan;
+  taskPlan = TaskPlan(sket->actionSequence);
+  rai::Array<Action> relevant_action = {taskPlan.actions(t)};
+  taskPlan = TaskPlan(relevant_action);
+  return taskPlan;
+}
+
+double rai::LGPComp2_RRTpath::branchingPenalty_child(int i) {
+  return 0.0;
 }
 
 void rai::LGPComp2_RRTpath::untimedCompute() {
@@ -353,19 +378,19 @@ void rai::LGPComp2_RRTpath::untimedCompute() {
 }
 
 std::shared_ptr<rai::ComputeNode> rai::LGPComp2_RRTpath::createNewChild(int i) {
-  CHECK(!i, "only single child");
+  // CHECK(!i, "only single child");
   if(t+1 < ways->komoWaypoints->T) {
     auto rrt =  make_shared<LGPComp2_RRTpath>(this, ways, t+1);
     rrt->prev = this;
     return rrt;
   }
-  return make_shared<LGPComp2_OptimizePath>(this, ways);
+  return make_shared<LGPComp2_OptimizePath>(this, ways, i);
 }
 
 //===========================================================================
 
 rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Skeleton* _sket)
-  : ComputeNode(_sket), sket(_sket) {
+  : GittinsNode(_sket), sket(_sket) {
   name <<"LGPComp2_PathFromSket#"<<sket->num;
 
   LGPComp2_root* root=sket->root;
@@ -388,7 +413,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Skeleton* _sket)
 }
 
 rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Waypoints* _ways)
-  : ComputeNode(_ways), sket(_ways->sket), ways(_ways) {
+  : GittinsNode(_ways), sket(_ways->sket), ways(_ways) {
   name <<"LGPComp2_PathFromWay#"<<ways->seed;
 
   LGPComp2_root* root=sket->root;
@@ -412,10 +437,11 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Waypoints* _ways
   //sol.setOptions(OptOptions().set_verbose(4));
 }
 
-rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, rai::LGPComp2_Waypoints* _ways)
-  : ComputeNode(_par), sket(_ways->sket), ways(_ways) {
+rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, rai::LGPComp2_Waypoints* _ways, int rndSeed)
+  : GittinsNode(_par), sket(_ways->sket), ways(_ways), seed(rndSeed) {
   name <<"LGPComp2_PathFromRRT#"<<ways->seed;
-
+  taskPlan = TaskPlan(sket->actionSequence);
+  rnd.seed(rndSeed);
   LGPComp2_root* root = ways->sket->root;
 
   isTerminal = true;
@@ -454,6 +480,12 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
   sol.setProblem(komoPath->nlp());
   sol.setInitialization(komoPath->x);
   //sol.setOptions(OptOptions().set_verbose(4));
+}
+
+rai::TaskPlan rai::LGPComp2_OptimizePath::getTaskPlan() {
+  if(!taskPlan.empty)  return taskPlan;
+  taskPlan = TaskPlan(sket->actionSequence);
+  return taskPlan;
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {

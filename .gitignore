@@ -1,7 +1,7 @@
 _make/config.mk
 /lib
 unity.cxx
-
+.DS_Store
 %% compile temporaries
 /build
 *.o
