@@ -23,6 +23,9 @@ endif
 ifndef OUTPUT
 OUTPUT = x.exe
 endif
+ifndef DEPS
+DEPS = $(OBJS:.o=.d)
+endif
 ifndef SRCS
 SRCS = $(OBJS:%.o=%.cpp)
 endif
@@ -200,7 +203,7 @@ all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
 clean: cleanLocks cleanLibs force
 	@echo "   *** clean      " $(PWD)
-	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
+	rm -f $(OUTPUT) $(OBJS) $(DEPS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	if [ -f "main.ipynb" ]; then jupyter-nbconvert --clear-output --inplace main.ipynb; fi
 
@@ -348,7 +351,7 @@ else
 endif
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -MMD -MP -MF $(@:.o=.d) -o $@ -c $<
 
 %.o: %.cxx
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
@@ -486,3 +489,5 @@ zip::
 
 
 force:	;
+
+-include $(OBJS:.o=.d)

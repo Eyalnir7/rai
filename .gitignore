@@ -6,6 +6,7 @@ unity.cxx
 /build
 *.o
 *.a
+*.d
 *.so
 *.swp
 parser.tab.h
