@@ -5,7 +5,7 @@
 #include <memory>
 #include <Search/TaskPlan.h>
 #include <Search/NodeTypes.h>
-#include <json/json.h>
+#include <jsoncpp/json/json.h>
 
 namespace rai {
 

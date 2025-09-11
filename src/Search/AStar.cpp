@@ -25,7 +25,7 @@ static void logNodeCompletion(rai::TreeSearchNode* node){
   if(thisType == NodeType::Other || thisType == NodeType::Skeleton) return; // skip Other type nodes
 
 
-  const char* path = "completionsAroundProblem1.csv";
+  const char* path = "completionsAroundProblemBerlin.csv";
   std::ifstream in(path);
   bool exists = in.good();
   in.close();
@@ -63,7 +63,7 @@ void rai::AStar::step() {
 
   rai::TreeSearchNode* root = queue.pop();
   if (!initialized) {
-    for (int i = 0; i < 50 && skeletonCount < 30; i++) {
+    for (int i = 0; i < 50 && skeletonCount < 3; i++) {
       std::cout << "Generating skeleton child " << i << " of " << 50 << std::endl;
       auto child = root->transition(i);
       if (child) {
@@ -91,9 +91,9 @@ void rai::AStar::step() {
     auto skeleton = feasibleSkeletons[skel_idx];
     std::cout << "Processing skeleton " << (skel_idx + 1) << "/" << feasibleSkeletons.size() << std::endl;
     
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 3; i++) {
       if (i % 10 == 0) {
-        std::cout << "  Generating waypoint " << i << "/10 for skeleton " << (skel_idx + 1) << std::endl;
+        std::cout << "  Generating waypoint " << i << "/12 for skeleton " << (skel_idx + 1) << std::endl;
       }
       auto waypointChild = skeleton->transition(i);
       if (waypointChild) {
@@ -121,13 +121,13 @@ void rai::AStar::step() {
   for (size_t wp_idx = 0; wp_idx < feasibleWaypoints.size(); wp_idx++) {
     auto waypoint = feasibleWaypoints[wp_idx];
     std::cout << "Processing waypoint " << (wp_idx + 1) << "/" << feasibleWaypoints.size() << std::endl;
+    std::cout << "Corresponding task plan:" << waypoint->getTaskPlan() << std::endl;
     
     TaskPlan taskPlan = waypoint->getTaskPlan();
     int numActions = taskPlan.actions.N;
 
-    // Try exactly 1 time to compute the full RRT path
     for (int attempt = 0; attempt < 1; attempt++) {
-      std::cout << "  RRT attempt " << (attempt + 1) << "/1 for waypoint " << (wp_idx + 1) << std::endl;
+      std::cout << "  RRT attempt " << (attempt + 1) << "/3 for waypoint " << (wp_idx + 1) << std::endl;
 
       // Start from the waypoint and traverse through all RRT nodes for each action
       GittinsNode* currentNode = waypoint;
@@ -157,6 +157,7 @@ void rai::AStar::step() {
               if(action == numActions - 1) rrtPath.push_back(gittinsRRT);
           } else {
             fullPathFeasible = false;
+            std::cout << "    Could not create RRT node for action " << (action + 1) << std::endl;
           }
         } else {
           fullPathFeasible = false;
@@ -167,8 +168,8 @@ void rai::AStar::step() {
   }
   for (auto& lastRRTNode : rrtPath) {
     // Try exactly 30 times to compute LGP path from the last RRT node
-    for (int lgpAttempt = 0; lgpAttempt < 100; lgpAttempt++) {
-      std::cout << "      LGP attempt " << (lgpAttempt + 1) << "/30" << std::endl;
+    for (int lgpAttempt = 0; lgpAttempt < 1; lgpAttempt++) {
+      std::cout << "      LGP attempt " << (lgpAttempt + 1) << "/1" << std::endl;
 
       auto lgpChild = lastRRTNode->transition(lgpAttempt);
       if (lgpChild) {
@@ -205,6 +206,7 @@ void rai::AStar::stepAStar() {
     }
     // printFrontier();
     node = queue.pop();
+    cout << "Exploring node: " << *node << " with priority: " << node->f_prio << std::endl;
     // if(mode==astar){
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
     // }

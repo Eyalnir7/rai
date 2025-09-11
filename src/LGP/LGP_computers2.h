@@ -195,6 +195,7 @@ struct LGPComp2_Waypoints : GittinsNode {
   virtual void untimedCompute();
 //    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
   virtual int getNumDecisions();
+  virtual double branchingPenalty_child(int i);
   virtual std::shared_ptr<ComputeNode> createNewChild(int i);
 };
 
@@ -204,6 +205,7 @@ struct LGPComp2_RRTpath : GittinsNode {
   LGPComp2_Waypoints* ways=0;
   LGPComp2_RRTpath* prev=0;
   LGPComp2_Skeleton *sket=0;
+  int seed = 0;
 
   shared_ptr<Configuration> C;
   uint t;
@@ -211,7 +213,7 @@ struct LGPComp2_RRTpath : GittinsNode {
   arr q0, qT;
   arr path;
 
-  LGPComp2_RRTpath(ComputeNode* _par, LGPComp2_Waypoints* _ways, uint _t);
+  LGPComp2_RRTpath(ComputeNode* _par, LGPComp2_Waypoints* _ways, uint _t, int rndSeed);
 
   virtual rai::NodeType getNodeType() const override { return rai::NodeType::RRTNode; }
   virtual rai::TaskPlan getTaskPlan() override;
@@ -220,7 +222,7 @@ struct LGPComp2_RRTpath : GittinsNode {
 
 //    virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
 
-  virtual int getNumDecisions(){ return (t+1 < ways->komoWaypoints->T) ? 1 : -1; }
+  virtual int getNumDecisions(){ return (t+1 < ways->komoWaypoints->T) ? -1 : 1; }
   virtual std::shared_ptr<ComputeNode> createNewChild(int i);
 };
 

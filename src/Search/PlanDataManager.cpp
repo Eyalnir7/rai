@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
 #include <limits>
 #include <algorithm>
 #include <utility>
@@ -246,7 +245,7 @@ bool PlanDataManager::getPlanDataWithFallback(const TaskPlan& taskPlan, const No
         std::cerr << "PlanDataManager not initialized. Call loadPlansFile() first." << std::endl;
         return false;
     }
-
+    // cout << "Getting plan data with fallback for plan: " << taskPlan << " and node type: " << toString(nodeType) << endl;
     // Get all plans sorted by distance to our target plan
     Array<TaskPlan> sortedPlans = getPlansSortedByDistance(taskPlan);
     if (sortedPlans.N == 0) {
@@ -280,7 +279,7 @@ bool PlanDataManager::getPlanDataWithFallback(const TaskPlan& taskPlan, const No
                     foundData = true;
                     if (planIdx > 0) { // Only log if we had to use a fallback plan
                         // std::cout << "Found data for " << toString(currentType) 
-                                //   << " in fallback plan: " << sortedPlans(planIdx) << std::endl;
+                        //           << " in fallback plan: " << sortedPlans(planIdx) << std::endl;
                     }
                     break;
                 }

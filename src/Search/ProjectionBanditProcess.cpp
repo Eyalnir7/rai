@@ -187,7 +187,7 @@ namespace rai {
 
     void ProjectionBanditProcess::updatePlanData(const TaskPlan taskPlan, rai::NodeType nodeType) {
         if (!planDataManager.isInitialized()) {
-            planDataManager.loadPlansFile("plansAround.g"); 
+            planDataManager.loadPlansFile("plansBerlin.g"); 
         }
 
         planDataManager.getProjectedPlanData(taskPlan, nodeType, planData);
