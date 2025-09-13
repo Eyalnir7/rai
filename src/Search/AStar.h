@@ -15,8 +15,14 @@
 
 namespace rai {
 
+struct AStar_GlobalInfo {
+  RAI_PARAM("AStar/", int, verbose, 1)
+};
+
 struct AStar {
   enum SearchMode { astar=0, treePolicy=1, FIFO=2, DataExtraction=3 };
+
+  AStar_GlobalInfo opt = AStar_GlobalInfo();
 
   typedef std::shared_ptr<TreeSearchNode> NodeP;
   rai::Array<NodeP> mem;

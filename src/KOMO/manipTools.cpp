@@ -322,7 +322,7 @@ void ManipulationHelper::action_pick(str action, double time, str gripper, str o
     // f->joint->q0 = zeros(7);
   }
 
-  if(action=="pick_touch"){
+  if(action=="pick_touch" || action == "pick_touch_goal"){
     komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
   } else if(action=="pick_box"){
     str palm;

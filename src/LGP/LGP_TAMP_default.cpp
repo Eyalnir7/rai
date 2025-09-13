@@ -61,6 +61,7 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
 #else //get action sequence (as stringAA)
     str debug;
     NodeL decisions = s->getDecisionSequence(debug);
+    cout << "here" << std::endl;
     Array<StringA> actionSequence(decisions.N);
     for(uint i=0;i<actionSequence.N;i++){
       actionSequence(i).resize(decisions(i)->parents.N);
@@ -88,12 +89,12 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
 
     ManipulationHelper manip(komo);
 
-    if(action(0)=="pick_box" || action(0)=="handover" || action(0)=="pick_touch"){
+    if(action(0)=="pick_box" || action(0)=="handover" || action(0)=="pick_touch" || action(0) == "pick_touch_goal"){
       str& obj = action(1);
       str& gripper = action(3);
       manip.action_pick(action(0), time, gripper, obj);
 
-    }else if(action(0)=="place_straightOn"){
+    }else if(action(0)=="place_straightOn" || action(0) == "place_straightOn_goal"){
       str& obj = action(1);
       str& table = action(3);
       manip.action_place_straightOn(action(0), time, obj, table);

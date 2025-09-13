@@ -206,7 +206,13 @@ void rai::AStar::stepAStar() {
     }
     // printFrontier();
     node = queue.pop();
-    cout << "Exploring node: " << *node << " with priority: " << node->f_prio << std::endl;
+    // downcast the node to a FOL_World_State object
+    if (opt.verbose >= 1){
+    if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
+      str debug;
+      folNode->getDecisionSequence(debug);
+      cout << "Exploring node: " << debug << std::endl;
+    }}
     // if(mode==astar){
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
     // }
