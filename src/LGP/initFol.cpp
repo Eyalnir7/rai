@@ -18,7 +18,13 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
   for(Frame* a:C.frames) if(a->ats) {
       if(a->ats->findNode("logical")) { //-- explicit setting of logic predicates
         const Graph& G = a->ats->findNode("logical")->graph();
-        for(Node* n:G) L.addFact({n->key, a->name});
+        for(Node* n:G){
+        L.addFact({n->key, a->name});
+        cout << "adding fact " <<n->key <<"(" <<a->name <<")" <<endl;
+        if(n->key=="on_floor"){
+          L.addFact({"on", "floor", a->name});
+        }
+        }
         isSymbol(a->ID)=true;
       } else if(a->joint && a->joint->type==JT_rigid) { //-- implicit object
         L.addFact({"is_object", a->name});
