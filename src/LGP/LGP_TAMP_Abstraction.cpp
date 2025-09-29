@@ -17,6 +17,7 @@ std::shared_ptr<KOMO> LGP_TAMP_Abstraction::get_waypointsProblem(Configuration& 
   }
 
   for(uint i=0; i<explicitCollisions.N; i+=2) {
+    // add the objective
     ways->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
   }
 
