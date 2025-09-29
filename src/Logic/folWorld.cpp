@@ -232,7 +232,7 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
 }
 
 const Array<TreeSearchDomain::Handle> FOL_World::get_actions() {
-  verbose = 10;
+  // verbose = 10;
   CHECK(state, "you need to set the state first! (e.g., reset_state)");
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<std::flush;
   Array<Handle> decisions; //tuples of rule and substitution

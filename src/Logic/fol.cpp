@@ -69,7 +69,6 @@ uint getNumOfVariables(Node* literal, Graph* varScope) {
       CHECK(isSymbol(i), "");
       v++;
     }
-    cout << "num of vars: " << v << endl;
   return v;
 }
 
@@ -397,9 +396,9 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst,
 NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   CHECK(relations.N, "");
   Graph& varScope = relations(0)->container.isNodeOfGraph->container; //this is usually a rule (scope = subGraph in which we'll use the indexing)
-  KB.write(std::cout); std::cout << std::endl;
-  cout << "############################## varScope: " << endl;
-  varScope.write(std::cout); std::cout << std::endl;
+  // KB.write(std::cout); std::cout << std::endl;
+  // cout << "############################## varScope: " << endl;
+  // varScope.write(std::cout); std::cout << std::endl;
 
   NodeL vars = getSymbolsOfScope(varScope);
 
