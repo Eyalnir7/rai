@@ -407,9 +407,9 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
     rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
     rai::Frame* prev = rootOfPicked->prev;
     if(prev && prev->joint && prev->joint->isStable){
-      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e-1}, NoArr, 1);
+      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
     }else{
-      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e-1}, NoArr, 1);
+      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
     }
     if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
   }
