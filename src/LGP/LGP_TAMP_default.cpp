@@ -61,7 +61,7 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
 #else //get action sequence (as stringAA)
     str debug;
     NodeL decisions = s->getDecisionSequence(debug);
-    cout << "here" << std::endl;
+    // cout << "here" << std::endl;
     Array<StringA> actionSequence(decisions.N);
     for(uint i=0;i<actionSequence.N;i++){
       actionSequence(i).resize(decisions(i)->parents.N);

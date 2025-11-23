@@ -20,7 +20,7 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
         const Graph& G = a->ats->findNode("logical")->graph();
         for(Node* n:G){
         L.addFact({n->key, a->name});
-        cout << "adding fact " <<n->key <<"(" <<a->name <<")" <<endl;
+        // cout << "adding fact " <<n->key <<"(" <<a->name <<")" <<endl;
         if(n->key=="on_floor"){
           L.addFact({"on", "floor", a->name});
         }

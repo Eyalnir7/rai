@@ -211,7 +211,7 @@ void rai::AStar::stepAStar() {
     if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
       str debug;
       folNode->getDecisionSequence(debug);
-      cout << "Exploring node: " << debug << std::endl;
+      // cout << "Exploring node: " << debug << std::endl;
     }}
     // if(mode==astar){
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
