@@ -37,6 +37,7 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("LGP/", double, collScale, 1e1)
   RAI_PARAM("LGP/", bool, useSequentialWaypointSolver, false)
   RAI_PARAM("", rai::String, solver, "ELS")
+  RAI_PARAM("LGP/", double, quantum, 0.1)
   RAI_PARAM("", int, numTaskPlans, 20)
 };
 
@@ -222,7 +223,7 @@ struct LGPComp2_RRTpath : GittinsNode {
 
 //    virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
 
-  virtual int getNumDecisions(){ return (t+1 < ways->komoWaypoints->T) ? -1 : 1; }
+  virtual int getNumDecisions(){ return (t+1 < ways->komoWaypoints->T) ? 1 : 0; }
   virtual std::shared_ptr<ComputeNode> createNewChild(int i);
 };
 

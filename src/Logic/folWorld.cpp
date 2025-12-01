@@ -599,6 +599,7 @@ void FOL_World::addObject(const char* name) {
 
 void FOL_World::addTerminalRule(const char* literals) {
   //first create a new rule
+  cout <<"ADDING TERMINATION RULE: " <<literals <<endl;
   Graph& rule = KB.addSubgraph("Rule");
   worldRules.append(rule.isNodeOfGraph);
   Graph& preconditions = rule.addSubgraph();

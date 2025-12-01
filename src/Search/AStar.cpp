@@ -248,8 +248,8 @@ void rai::AStar::stepAStar() {
   bool becameComplete = (!wasComplete && node->isComplete);
   if(becameComplete){
     // logNodeCompletion(node);
-    // printFrontier();
-    // std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
+    printFrontier();
+    std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
   }
 
   //depending on state -> drop, reinsert, save as solution, or expand
@@ -259,16 +259,16 @@ void rai::AStar::stepAStar() {
     addToQueue(node);
 
   }else if(mode==astar && node->f_prio>currentLevel){ //send back to queue - might not be optimal anymore
-    addToQueue(node);
-
+      addToQueue(node);
   }else if(node->isTerminal){   //save as solution
     // if the node can be casted to a gittinsNode, cast it and print the taskPlan
     // if(auto gittinsNode = dynamic_cast<GittinsNode*>(node)){
     //   std::cout << "GittinsNode found with TaskPlan: " << gittinsNode->taskPlan << std::endl;
     // }
     solutions.append(node);
+  }
 
-  }else{  //expand or deepen
+  else{  //expand or deepen
     CHECK(node->isComplete, "");
     CHECK(!node->isTerminal, "");
 
