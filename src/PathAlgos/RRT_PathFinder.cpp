@@ -231,8 +231,8 @@ void RRT_PathFinder::setStartGoal(const arr& _starts, const arr& _goals){
   arr qT = _goals;
   auto q0ret = P->query(q0);
   auto qTret = P->query(qT);
-  if(!q0ret->isFeasible) { LOG(0) <<"initializing with infeasible q0:"; q0ret->writeDetails(std::cout, *P); }
-  if(!qTret->isFeasible) { LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, *P); }
+  // if(!q0ret->isFeasible) { LOG(0) <<"initializing with infeasible q0:"; q0ret->writeDetails(std::cout, *P); }
+  // if(!qTret->isFeasible) { LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, *P); }
   rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
 }

@@ -4,6 +4,10 @@
 #include <Search/NodeTypes.h> 
 #include <Search/BanditProcess.h>
 
+namespace rai {
+  struct Configuration;
+}
+
 struct GittinsNode : rai::ComputeNode {
   using ComputeNode::ComputeNode;     
   
@@ -13,6 +17,9 @@ struct GittinsNode : rai::ComputeNode {
   // Virtual function to get node type - must be implemented by derived classes
   virtual rai::NodeType getNodeType() const { return rai::NodeType::Other; }
   virtual rai::TaskPlan getTaskPlan() { return taskPlan; }
+  
+  // Virtual function to get configuration - returns nullptr by default
+  virtual rai::Configuration* getConfiguration() { return nullptr; }
 
   // Convenience function for backward compatibility
   rai::NodeType nodeType() const { return getNodeType(); }

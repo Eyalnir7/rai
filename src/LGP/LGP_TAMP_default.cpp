@@ -33,6 +33,7 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
     L->init(folFile.fullPath());
     initFolStateFromKin(*L, C);
     L->addTerminalRule(lgpConfig.get<String>("terminal")); //"(on gripper ball)");
+    cout << "Terminal condition: " << lgpConfig.get<String>("terminal") << endl;
 
     // lgpConfig.get<bool>("genericCollisions"),
     // lgpConfig.get<StringA>("coll", {}),

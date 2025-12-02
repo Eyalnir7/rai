@@ -1,6 +1,36 @@
+#include "ModelPredictor.h"
 #include "Search/GittinsNode.h"
 #include "../LGP/LGP_computers.h"
 #include <Search/ProjectionBanditProcess.h>
+#include <cmath> // for std::exp
+#include <Search/ModelPredictor.h>
+
+using namespace rai;
+
+ModelPredictor& getModelPredictorSingleton() {
+    static ModelPredictor predictor("/home/eyal/projects/lgp-pddl/25-newSolvers/FolTest/Learning/trained_constraint_gnn_scripted.pt");
+    return predictor;
+}
+
+double predictFromModel(rai::Configuration& C, const StringAA& actionSequence) {
+    try {
+        ModelPredictor& predictor = getModelPredictorSingleton();
+        torch::Tensor prediction = predictor.predict(C, actionSequence);
+        return prediction.item<double>();
+    } catch (const std::exception& e) {
+        std::cerr << "Model prediction failed: " << e.what() << std::endl;
+        return 0.0;
+    }
+}
+
+// taskPlan to StringAA
+StringAA taskPlanToStringAA(const rai::TaskPlan& taskPlan) {
+    StringAA actionSequence;
+    for (const auto& action : taskPlan.actions) {
+        actionSequence.append(action.objects);
+    }
+    return actionSequence;
+}
 
 double GittinsNode::computePriority() {
     // if (rai::info().node_type == "ELS") {
@@ -10,18 +40,28 @@ double GittinsNode::computePriority() {
         return baseLevel + computePenalty();
     }
     rai::NodeType nodeType = getNodeType();
-    taskPlan = getTaskPlan();
 
-    if(nodeType==rai::NodeType::Other || nodeType==rai::NodeType::Skeleton || taskPlan.empty){
-      if(nodeType==rai::NodeType::Skeleton) return -2;
-      return 0;
-    }
+    // if(nodeType==rai::NodeType::Other || nodeType==rai::NodeType::Skeleton || taskPlan.empty){
+    //   if(nodeType==rai::NodeType::Skeleton) return -2;
+    //   return 0;
+    // }
 
-    if (!banditProcess) {
-      banditProcess = std::make_unique<rai::ProjectionBanditProcess>(taskPlan, nodeType);
+    // if (!banditProcess) {
+    //   banditProcess = std::make_unique<rai::ProjectionBanditProcess>(taskPlan, nodeType);
+    // }
+    // // std::cout << "using bandit process for Gittins index computation" << std::endl;
+    // return -banditProcess->compute_gittins_index(0);
+    if(nodeType==rai::NodeType::Skeleton || nodeType==rai::NodeType::RRTNode){
+      return -2;
     }
-    // std::cout << "using bandit process for Gittins index computation" << std::endl;
-    return -banditProcess->compute_gittins_index(0);
+    if(nodeType==rai::NodeType::WaypointsNode){
+      taskPlan = getTaskPlan();
+      StringAA actionSequence = taskPlanToStringAA(taskPlan);
+      double modelOutput = predictFromModel(*getConfiguration(), actionSequence);
+      double priority = -rai::sigmoid(modelOutput);
+      return priority;
+    }
+    return 0;
 }
 
 // TODO: Store the A matrix (used in leonid calculation) of each node type in a file (Maybe use the graph structure of rai to have a single file of all matrices of every node type).

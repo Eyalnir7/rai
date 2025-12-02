@@ -109,6 +109,7 @@ struct LGPComp2_root : GittinsNode {
 
   LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton);
 
+  virtual rai::Configuration* getConfiguration() override { return &C; }
   virtual void untimedCompute() {}
   virtual int getNumDecisions(){ return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
 //    virtual double effortHeuristic(){ return 11.+10.; }
@@ -136,6 +137,7 @@ struct LGPComp2_Skeleton : GittinsNode {
 
   void createNLPs(const rai::Configuration& C);
 
+  virtual rai::Configuration* getConfiguration() override { return &root->C; }
   virtual void untimedCompute();
 
   virtual rai::NodeType getNodeType() const override { return rai::NodeType::Skeleton; }
@@ -191,6 +193,7 @@ struct LGPComp2_Waypoints : GittinsNode {
 
   LGPComp2_Waypoints(LGPComp2_Skeleton* _sket, int rndSeed);
 
+  virtual rai::Configuration* getConfiguration() override { return &sket->root->C; }
   virtual rai::NodeType getNodeType() const override { return rai::NodeType::WaypointsNode; }
   virtual rai::TaskPlan getTaskPlan() override;
   virtual void untimedCompute();

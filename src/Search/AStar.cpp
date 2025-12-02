@@ -245,12 +245,12 @@ void rai::AStar::stepAStar() {
     node->compute();
   }
 
-  bool becameComplete = (!wasComplete && node->isComplete);
-  if(becameComplete){
-    // logNodeCompletion(node);
-    printFrontier();
-    std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
-  }
+  // bool becameComplete = (!wasComplete && node->isComplete);
+  // if(becameComplete){
+  //   // logNodeCompletion(node);
+  //   // printFrontier();
+  //   // std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
+  // }
 
   //depending on state -> drop, reinsert, save as solution, or expand
   if(!node->isFeasible){ //drop node completely

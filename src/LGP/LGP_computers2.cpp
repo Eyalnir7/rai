@@ -28,7 +28,7 @@ double rai::LGPComp2_root::branchingPenalty_child(int i) {
 }
 
 std::shared_ptr<rai::ComputeNode> rai::LGPComp2_root::createNewChild(int i) {
-  cout << "Creating new LGPComp2_Skeleton child from root, child index: " << i << endl;
+  // cout << "Creating new LGPComp2_Skeleton child from root, child index: " << i << endl;
   return make_shared<LGPComp2_Skeleton>(this, i);
 }
 
@@ -224,9 +224,9 @@ void rai::LGPComp2_Waypoints::untimedCompute() {
       if(root->verbose()>1) {
         cout <<sol.optCon->L.reportGradients(komoWaypoints->featureNames) <<endl;
       }
-      cout << "waypoints NOT feasible: ineq=" <<ret->ineq <<' ' <<"eq=" <<ret->eq <<endl;
+      // cout << "waypoints NOT feasible: ineq=" <<ret->ineq <<' ' <<"eq=" <<ret->eq <<endl;
     } else {
-      cout << "waypoints feasible!" <<endl;
+      // cout << "waypoints feasible!" <<endl;
       isFeasible = true;
       if(root->verbose()>2) komoWaypoints->view(root->verbose()>3, STRING(name <<" - final, c:" <<c <<"\n" <<*ret));
       if(root->verbose()>3) komoWaypoints->view_play(true);
@@ -263,7 +263,7 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
   LGPComp2_root* root = ways->sket->root;
   rnd.seed(rndSeed);
   isTerminal = (t+1 >= ways->komoWaypoints->T);
-  cout << "isTerminal: " << isTerminal << endl;
+  // cout << "isTerminal: " << isTerminal << endl;
 
   if(root->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
   C = make_shared<rai::Configuration>();
@@ -304,7 +304,7 @@ void rai::LGPComp2_RRTpath::untimedCompute() {
   auto startTime = rai::cpuTime();
   while(rai::cpuTime() - startTime < quantum) { r = rrt->stepConnect(); if(r) break; }
   if(r==1) {
-    cout << "RRT succeeded" <<endl;
+    // cout << "RRT succeeded" <<endl;
     isComplete=true;
     l=0.;
     path = path_resampleLinear(rrt->path, root->info->pathStepsPerPhase);
@@ -314,7 +314,7 @@ void rai::LGPComp2_RRTpath::untimedCompute() {
     l=1e10;
     //      if(root->sol->opt.verbose>0) komoPath->view(root->sol->opt.verbose>1, "init path - RRT FAILED");
     if(root->verbose()>1) LOG(-1) <<"RRT FAILED";
-    cout << "RRT FAILED" <<endl;
+    // cout << "RRT FAILED" <<endl;
     path.clear();
   }
   if(isComplete) {
@@ -324,7 +324,7 @@ void rai::LGPComp2_RRTpath::untimedCompute() {
 
 std::shared_ptr<rai::ComputeNode> rai::LGPComp2_RRTpath::createNewChild(int i) {
   // CHECK(!i, "only single child");
-  cout << "creating child from RRTpath at t=" << t << "node ID:" << ID<< endl;
+  // cout << "creating child from RRTpath at t=" << t << "node ID:" << ID<< endl;
   if(t+1 < ways->komoWaypoints->T) {
     auto rrt =  make_shared<LGPComp2_RRTpath>(this, ways, t+1, i);
     rrt->prev = this;
