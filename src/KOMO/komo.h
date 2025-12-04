@@ -35,6 +35,7 @@ struct KOMO_Options {
   RAI_PARAM("KOMO/", bool, mimicStable, true)
   RAI_PARAM("KOMO/", double, sampleRate_stable, .0)
   RAI_PARAM("KOMO/", bool, sparse, true)
+  RAI_PARAM("KOMO/", double, waypointsInitNoise, 5)
 };
 }//namespace
 

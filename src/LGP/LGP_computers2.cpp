@@ -165,7 +165,8 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
   komoWaypoints = root->tamp.get_waypointsProblem(root->C, sket->actionSequence);
 
   rnd.seed(rndSeed);
-  komoWaypoints->initRandom(0);
+  // komoWaypoints->initRandom(0);
+  komoWaypoints->run_prepare(komoWaypoints->opt.waypointsInitNoise);
   if(root->verbose()>2){
     komoWaypoints->view(root->verbose()>3, STRING(name <<" - init"));
   }
@@ -218,7 +219,7 @@ void rai::LGPComp2_Waypoints::untimedCompute() {
   }
 
   if(isComplete) {
-    if(ret->ineq>.5 || ret->eq>2.) {
+    if(!((ret->ineq<.1) && (ret->eq<.1))) {
       isFeasible = false;
       komoWaypoints->view_close();
       if(root->verbose()>1) {

@@ -118,6 +118,7 @@ std::shared_ptr<SolverReturn> ConstrainedSolver::run() {
   ret->sos = err(OT_sos);
   ret->f = err(OT_f);
   ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
+  ret->evals = newton.evals;
   return ret;
 }
 
