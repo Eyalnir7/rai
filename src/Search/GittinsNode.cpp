@@ -1,7 +1,7 @@
 #include "ModelPredictor.h"
 #include "Search/GittinsNode.h"
 #include "../LGP/LGP_computers.h"
-#include <Search/ProjectionBanditProcess.h>
+// #include <Search/ProjectionBanditProcess.h>
 #include <cmath> // for std::exp
 #include <Search/ModelPredictor.h>
 

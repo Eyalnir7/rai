@@ -14,6 +14,7 @@
 #include "../Kin/F_qFeatures.h"
 #include "../Optim/constrained.h"
 #include "../KOMO/pathTools.h"
+#include <Search/NodeTypes.h>
 
 rai::LGPComp2_root::
     LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton)
@@ -36,12 +37,12 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_root::createNewChild(int i) {
 
 rai::LGPComp2_Skeleton::LGPComp2_Skeleton(rai::LGPComp2_root* _root, int num) : GittinsNode(_root), root(_root), num(num) {
   name <<"LGPComp2_Skeleton#"<<num;
-  // if(_root->info->solver == "GITTINS"){
-  //   needsWidening = false;
-  // }
-  // else{
-  //   needsWidening = true;
-  // }
+  if(_root->info->solver == "GITTINS"){
+    needsWidening = false;
+  }
+  else{
+    needsWidening = true;
+  }
 }
 
 void rai::LGPComp2_Skeleton::createNLPs(const Configuration& C) {
@@ -288,8 +289,8 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 rai::TaskPlan rai::LGPComp2_RRTpath::getTaskPlan() {
   if(!taskPlan.empty)  return taskPlan;
   taskPlan = TaskPlan(sket->actionSequence);
-  rai::Array<Action> relevant_action = {taskPlan.actions(t)};
-  taskPlan = TaskPlan(relevant_action);
+  // rai::Array<Action> relevant_action = {taskPlan.actions(t)};
+  // taskPlan = TaskPlan(relevant_action);
   return taskPlan;
 }
 
