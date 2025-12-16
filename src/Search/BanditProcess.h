@@ -29,7 +29,7 @@ namespace rai {
         virtual ~BanditProcess() = default;
         
         // Returns pair of (stopping_time, gittins_index)
-        virtual std::pair<int, double> compute_gittins_index(int state) const;
+        virtual std::pair<int, double> compute_gittins_index(double state) const;
         
       };
 }

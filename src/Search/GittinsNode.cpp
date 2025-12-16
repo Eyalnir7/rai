@@ -39,29 +39,17 @@ double GittinsNode::computePriority() {
     if (rai::info().solver == "ELS") {
         return baseLevel + computePenalty();
     }
-    rai::NodeType nodeType = getNodeType();
 
-    // if(nodeType==rai::NodeType::Other || nodeType==rai::NodeType::Skeleton || taskPlan.empty){
-    //   if(nodeType==rai::NodeType::Skeleton) return -2;
-    //   return 0;
-    // }
+    if(banditProcess->empty){
+        initBanditProcess();
+    }
 
-    // if (!banditProcess) {
-    //   banditProcess = std::make_unique<rai::ProjectionBanditProcess>(taskPlan, nodeType);
-    // }
-    // // std::cout << "using bandit process for Gittins index computation" << std::endl;
-    // return -banditProcess->compute_gittins_index(0);
-    if(nodeType==rai::NodeType::Skeleton || nodeType==rai::NodeType::RRTNode){
-      return -2;
-    }
-    if(nodeType==rai::NodeType::WaypointsNode){
-      taskPlan = getTaskPlan();
-      StringAA actionSequence = taskPlanToStringAA(taskPlan);
-      double modelOutput = predictFromModel(*getConfiguration(), actionSequence);
-      double priority = -rai::sigmoid(modelOutput);
-      return priority;
-    }
-    return 0;
+    int compute_units= c/banditProcess->sigma;
+    // convert compute_units to double for more precise gittins index computation
+    double compute_units_double = static_cast<double>(compute_units);
+    auto [stopping_time, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+
+    return -gittins_index;
 }
 
 // TODO: Store the A matrix (used in leonid calculation) of each node type in a file (Maybe use the graph structure of rai to have a single file of all matrices of every node type).

@@ -140,8 +140,6 @@ struct LGPComp2_Skeleton : GittinsNode {
   virtual rai::Configuration* getConfiguration() override { return &root->C; }
   virtual void untimedCompute();
 
-  virtual rai::NodeType getNodeType() const override { return rai::NodeType::Skeleton; }
-
   virtual int getNumDecisions() { return -1.; }
 //    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
 //    virtual double effortHeuristic(){ return 10.+10.; }
@@ -194,8 +192,6 @@ struct LGPComp2_Waypoints : GittinsNode {
   LGPComp2_Waypoints(LGPComp2_Skeleton* _sket, int rndSeed);
 
   virtual rai::Configuration* getConfiguration() override { return &sket->root->C; }
-  virtual rai::NodeType getNodeType() const override { return rai::NodeType::WaypointsNode; }
-  virtual rai::TaskPlan getTaskPlan() override;
   virtual void untimedCompute();
 //    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
   virtual int getNumDecisions();
@@ -219,8 +215,6 @@ struct LGPComp2_RRTpath : GittinsNode {
 
   LGPComp2_RRTpath(ComputeNode* _par, LGPComp2_Waypoints* _ways, uint _t, int rndSeed);
 
-  virtual rai::NodeType getNodeType() const override { return rai::NodeType::RRTNode; }
-  virtual rai::TaskPlan getTaskPlan() override;
   virtual void untimedCompute();
   virtual double branchingPenalty_child(int i);
 
@@ -259,8 +253,6 @@ struct LGPComp2_OptimizePath : GittinsNode {
 //        if(opt.verbose>0) komoPath.view(opt.verbose>1, STRING("optimized path\n" <<*ret));
 //        //komoPath.checkGradients();
 //        if(opt.verbose>1) komoPath.view_play(opt.verbose>2);
-  virtual rai::NodeType getNodeType() const override { return rai::NodeType::LGPPathNode; }
-  virtual rai::TaskPlan getTaskPlan() override;
   virtual int getNumDecisions() { return 0; }
   virtual std::shared_ptr<ComputeNode> createNewChild(int i) { HALT("is terminal"); }
 };

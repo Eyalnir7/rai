@@ -178,12 +178,6 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 
 }
 
-rai::TaskPlan rai::LGPComp2_Waypoints::getTaskPlan() {
-  if(!taskPlan.empty)  return taskPlan;
-  taskPlan = TaskPlan(sket->actionSequence);
-  return taskPlan;
-}
-
 void rai::LGPComp2_Waypoints::untimedCompute() {
   LGPComp2_root* root=sket->root;
 
@@ -284,14 +278,6 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 
   if(root->verbose()>1) rrt->opt.verbose=root->verbose()-2;
   rrt->opt.maxIters = root->info->rrtStopEvals;
-}
-
-rai::TaskPlan rai::LGPComp2_RRTpath::getTaskPlan() {
-  if(!taskPlan.empty)  return taskPlan;
-  taskPlan = TaskPlan(sket->actionSequence);
-  // rai::Array<Action> relevant_action = {taskPlan.actions(t)};
-  // taskPlan = TaskPlan(relevant_action);
-  return taskPlan;
 }
 
 double rai::LGPComp2_RRTpath::branchingPenalty_child(int i) {
@@ -428,12 +414,6 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
   sol.setProblem(komoPath->nlp());
   sol.setInitialization(komoPath->x);
   //sol.setOptions(OptOptions().set_verbose(4));
-}
-
-rai::TaskPlan rai::LGPComp2_OptimizePath::getTaskPlan() {
-  if(!taskPlan.empty)  return taskPlan;
-  taskPlan = TaskPlan(sket->actionSequence);
-  return taskPlan;
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {

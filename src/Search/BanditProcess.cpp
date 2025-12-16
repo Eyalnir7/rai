@@ -8,7 +8,7 @@ namespace rai {
 // Define the static member
 double BanditProcess::beta = 0.99;
 
-std::pair<int, double> BanditProcess::compute_gittins_index(int state) const {
+std::pair<int, double> BanditProcess::compute_gittins_index(double state) const {
     if (empty) {
         // You can decide what makes sense here; throwing is safest.
         throw std::runtime_error("BanditProcess::compute_gittins_index called on empty process");
@@ -33,11 +33,11 @@ std::pair<int, double> BanditProcess::compute_gittins_index(int state) const {
 
         // Python:
         // chain_state = self.state if i == 0 else 0
-        const int chain_state = (i == 0) ? state : 0;
+        const double chain_state = (i == 0) ? state : 0.0;
 
         // stopping_time, numerator, denominator_aux = chain.get_stopping_time_and_gittins_parts(...)
         auto res = chain.get_stopping_time_and_gittins_parts(
-            static_cast<double>(chain_state),
+            chain_state,
             next_layer_numerator,
             next_layer_aux
         );
