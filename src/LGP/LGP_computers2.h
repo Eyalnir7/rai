@@ -39,6 +39,7 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("", rai::String, solver, "ELS")
   RAI_PARAM("LGP/", double, quantum, 0.1)
   RAI_PARAM("", int, numTaskPlans, 20)
+  RAI_PARAM("", rai::String, predictionType, "GT")
 };
 
 namespace {
@@ -192,6 +193,7 @@ struct LGPComp2_Waypoints : GittinsNode {
   LGPComp2_Waypoints(LGPComp2_Skeleton* _sket, int rndSeed);
 
   virtual rai::Configuration* getConfiguration() override { return &sket->root->C; }
+  virtual void initBanditProcess() override;
   virtual void untimedCompute();
 //    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
   virtual int getNumDecisions();
@@ -215,6 +217,7 @@ struct LGPComp2_RRTpath : GittinsNode {
 
   LGPComp2_RRTpath(ComputeNode* _par, LGPComp2_Waypoints* _ways, uint _t, int rndSeed);
 
+  virtual void initBanditProcess() override;
   virtual void untimedCompute();
   virtual double branchingPenalty_child(int i);
 
@@ -238,6 +241,7 @@ struct LGPComp2_OptimizePath : GittinsNode {
   LGPComp2_OptimizePath(LGPComp2_Waypoints* _ways); //compute path initialized from waypoints
   LGPComp2_OptimizePath(LGPComp2_RRTpath* _par, LGPComp2_Waypoints* _ways, int rndSeed); //compute path initialized from series of RRT solutions
 
+  virtual void initBanditProcess() override;
   virtual void untimedCompute();
 //    virtual double effortHeuristic(){ return 0.; }
 

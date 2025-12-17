@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "LGP_computers2.h"
+#include "PredictMarkovChain.h"
 
 #include "../Kin/viewer.h"
 #include "../Gui/opengl.h"
@@ -178,6 +179,13 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 
 }
 
+void rai::LGPComp2_Waypoints::initBanditProcess() {
+  LGPComp2_root* root = sket->root;
+  if(root->info->predictionType == "GT") {
+    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_Waypoints(sket->num));
+  }
+}
+
 void rai::LGPComp2_Waypoints::untimedCompute() {
   LGPComp2_root* root=sket->root;
 
@@ -278,6 +286,13 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 
   if(root->verbose()>1) rrt->opt.verbose=root->verbose()-2;
   rrt->opt.maxIters = root->info->rrtStopEvals;
+}
+
+void rai::LGPComp2_RRTpath::initBanditProcess() {
+  LGPComp2_root* root = ways->sket->root;
+  if(root->info->predictionType == "GT") {
+    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_RRT(ways->sket->num, t));
+  }
 }
 
 double rai::LGPComp2_RRTpath::branchingPenalty_child(int i) {
@@ -414,6 +429,13 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
   sol.setProblem(komoPath->nlp());
   sol.setInitialization(komoPath->x);
   //sol.setOptions(OptOptions().set_verbose(4));
+}
+
+void rai::LGPComp2_OptimizePath::initBanditProcess() {
+  LGPComp2_root* root = sket->root;
+  if(root->info->predictionType == "GT") {
+    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_LGP(sket->num));
+  }
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {
