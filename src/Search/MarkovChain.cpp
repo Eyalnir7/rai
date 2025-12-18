@@ -40,12 +40,15 @@ MarkovChain MarkovChain::get_subchain(double start, double end) const {
     std::vector<int> done_t, fail_t;
     std::vector<double> done_p, fail_p;
 
+    // Determine the shift amount: if start is -infinity (< 0), shift by 0, otherwise shift by start
+    const int shift = (start < 0) ? 0 : static_cast<int>(start);
+
     done_t.reserve(done_times_.size());
     done_p.reserve(done_transitions_.size());
     for (std::size_t i = 0; i < done_times_.size(); ++i) {
         const int t = done_times_[i];
         if (t >= start && t <= end) {
-            done_t.push_back(t);
+            done_t.push_back(t - shift);
             done_p.push_back(done_transitions_[i]);
         }
     }
@@ -55,7 +58,7 @@ MarkovChain MarkovChain::get_subchain(double start, double end) const {
     for (std::size_t i = 0; i < fail_times_.size(); ++i) {
         const int t = fail_times_[i];
         if (t >= start && t <= end) {
-            fail_t.push_back(t);
+            fail_t.push_back(t - shift);
             fail_p.push_back(fail_transitions_[i]);
         }
     }

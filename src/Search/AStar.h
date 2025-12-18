@@ -36,7 +36,7 @@ struct AStar {
 
   AStar(const std::shared_ptr<TreeSearchNode>& _root, SearchMode _mode = astar);
 
-  void step();
+  void step(bool fol=true);
   void stepAStar();
   bool run(int stepsLimit=-1);
   void report();

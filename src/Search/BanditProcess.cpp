@@ -12,6 +12,7 @@ std::pair<int, double> BanditProcess::compute_gittins_index(double state) const 
     if (empty) {
         // You can decide what makes sense here; throwing is safest.
         throw std::runtime_error("BanditProcess::compute_gittins_index called on empty process");
+        // return {1, -2.0};
     }
 
     // Matches Python:

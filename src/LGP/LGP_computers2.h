@@ -23,76 +23,24 @@ namespace rai {
 //===========================================================================
 
 struct LGP2_GlobalInfo {
-  RAI_PARAM("LGP/", int, verbose, 1)
+  RAI_PARAM("LGP/", int, verbose, 0)
   RAI_PARAM("LGP/", double, skeleton_w0, 1.)
   RAI_PARAM("LGP/", double, skeleton_wP, 2.)
   RAI_PARAM("LGP/", double, waypoint_w0, 10.)
   RAI_PARAM("LGP/", double, waypoint_wP, 2.)
   RAI_PARAM("LGP/", int, waypointStopEvals, 1000)
   RAI_PARAM("LGP/", int, rrtStopEvals, 10000)
-  RAI_PARAM("LGP/", double, rrtStepsize, .05)
+  RAI_PARAM("LGP/", double, rrtStepsize, .1)
   RAI_PARAM("LGP/", double, rrtTolerance, .03)
   RAI_PARAM("LGP/", double, pathCtrlCosts, 1.)
   RAI_PARAM("LGP/", int, pathStepsPerPhase, 30)
   RAI_PARAM("LGP/", double, collScale, 1e1)
   RAI_PARAM("LGP/", bool, useSequentialWaypointSolver, false)
   RAI_PARAM("", rai::String, solver, "ELS")
-  RAI_PARAM("LGP/", double, quantum, 0.1)
+  RAI_PARAM("LGP/", double, quantum, 0.01)
   RAI_PARAM("", int, numTaskPlans, 20)
-  RAI_PARAM("", rai::String, predictionType, "GT")
+  RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none
 };
-
-namespace {
-
-
-  std::string remove_numbers_in_brackets(const std::string& plan_text) {
-    // Pattern to match numbers like "1.2 (" or "2.1 (" at the beginning of actions
-    std::regex pattern(R"(\d+\.\d+\s+(?=\())");
-
-    // Replace the matched pattern with an empty string
-    std::string cleaned_plan = std::regex_replace(plan_text, pattern, "");
-
-    // Clean up extra spaces (similar to Python's re.sub(r'\s+', ' ', ...))
-    std::regex space_re(R"(\s+)");
-    cleaned_plan = std::regex_replace(cleaned_plan, space_re, " ");
-
-    // Trim leading/trailing spaces
-    if (!cleaned_plan.empty() && cleaned_plan.front() == ' ')
-        cleaned_plan.erase(0, 1);
-    if (!cleaned_plan.empty() && cleaned_plan.back() == ' ')
-        cleaned_plan.pop_back();
-
-    return cleaned_plan;
-  }
-
-  static rai::String sanitizeCSV(rai::String s){
-    // Replace newlines and carriage returns with spaces
-    for(uint i=0; i<s.N; ++i) if(s.p[i]=='\n' || s.p[i]=='\r') s.p[i]=' ';
-    // Replace double quotes with double double quotes
-    uint i=0;
-    while(i < s.N){
-      if(s.p[i]=='"'){
-        s.replace(i, 1, "\"\"", 2);
-        i += 2;
-      }else{
-        ++i;
-      }
-    }
-    // Remove numbers in brackets using std::regex on std::string
-    std::string tmp(s.p, s.N);
-    tmp = remove_numbers_in_brackets(tmp);
-    s = STRING(tmp);
-    return s;
-  }
-
-  static std::string sanitizeCSV(std::string s){
-    for(char &ch : s) if(ch=='\n' || ch=='\r') ch=' ';
-    size_t pos = 0;
-    while((pos = s.find('"', pos)) != std::string::npos){ s.replace(pos, 1, "\"\""); pos += 2; }
-    s = remove_numbers_in_brackets(s);
-    return s;
-  }
-}
 
 //===========================================================================
 
@@ -140,11 +88,14 @@ struct LGPComp2_Skeleton : GittinsNode {
 
   virtual rai::Configuration* getConfiguration() override { return &root->C; }
   virtual void untimedCompute();
+  virtual rai::NodeType getNodeType() override { return rai::NodeType::Skeleton; }
+  virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(actionSequence); }
 
   virtual int getNumDecisions() { return -1.; }
 //    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
 //    virtual double effortHeuristic(){ return 10.+10.; }
   virtual double branchingPenalty_child(int i);
+  double computePriority() override;
 
   virtual std::shared_ptr<ComputeNode> createNewChild(int i);
 };
@@ -195,6 +146,8 @@ struct LGPComp2_Waypoints : GittinsNode {
   virtual rai::Configuration* getConfiguration() override { return &sket->root->C; }
   virtual void initBanditProcess() override;
   virtual void untimedCompute();
+  virtual rai::NodeType getNodeType() override { return rai::NodeType::WaypointsNode; }
+  virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(sket->actionSequence); }
 //    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
   virtual int getNumDecisions();
   virtual double branchingPenalty_child(int i);
@@ -219,11 +172,13 @@ struct LGPComp2_RRTpath : GittinsNode {
 
   virtual void initBanditProcess() override;
   virtual void untimedCompute();
+  virtual rai::NodeType getNodeType() override { return rai::NodeType::RRTNode; }
+  virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(sket->actionSequence); }
   virtual double branchingPenalty_child(int i);
 
 //    virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
 
-  virtual int getNumDecisions(){ return (t+1 < ways->komoWaypoints->T) ? 1 : 0; }
+  virtual int getNumDecisions(){ return 1; }
   virtual std::shared_ptr<ComputeNode> createNewChild(int i);
 };
 
@@ -243,6 +198,8 @@ struct LGPComp2_OptimizePath : GittinsNode {
 
   virtual void initBanditProcess() override;
   virtual void untimedCompute();
+  virtual rai::NodeType getNodeType() override { return rai::NodeType::LGPPathNode; }
+  virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(sket->actionSequence); }
 //    virtual double effortHeuristic(){ return 0.; }
 
   virtual double sample() {

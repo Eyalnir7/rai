@@ -21,7 +21,7 @@ enum OptMethod { M_none=0,
 
 
 struct OptOptions {
-  RAI_PARAM("opt/", int, verbose, 1)
+  RAI_PARAM("opt/", int, verbose, 0)
   RAI_PARAM("opt/", double, stopTolerance, 1e-2)
   RAI_PARAM("opt/", double, stopFTolerance, -1.)
   RAI_PARAM("opt/", double, stopGTolerance, -1.)

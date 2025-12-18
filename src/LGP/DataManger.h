@@ -3,9 +3,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
+#include <jsoncpp/json/json.h>
 
 struct TransitionData {
     std::vector<double> done_transitions;
@@ -43,12 +41,12 @@ private:
     void loadData();
     
     // Helper to extract TransitionData from JSON
-    TransitionData extractTransitionData(const json& j);
+    TransitionData extractTransitionData(const Json::Value& j);
     
     // Data storage
-    json waypointsData;
-    json rrtData;
-    json lgpData;
+    Json::Value waypointsData;
+    Json::Value rrtData;
+    Json::Value lgpData;
     
     // Data directory path
     std::string dataDirectory;

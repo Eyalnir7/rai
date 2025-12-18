@@ -1,36 +1,69 @@
-#include "ModelPredictor.h"
+// #include "ModelPredictor.h"
 #include "Search/GittinsNode.h"
-#include "../LGP/LGP_computers.h"
 // #include <Search/ProjectionBanditProcess.h>
 #include <cmath> // for std::exp
-#include <Search/ModelPredictor.h>
+// #include <Search/ModelPredictor.h>
 
 using namespace rai;
 
-ModelPredictor& getModelPredictorSingleton() {
-    static ModelPredictor predictor("/home/eyal/projects/lgp-pddl/25-newSolvers/FolTest/Learning/trained_constraint_gnn_scripted.pt");
-    return predictor;
+// ModelPredictor& getModelPredictorSingleton() {
+//     static ModelPredictor predictor("/home/eyal/projects/lgp-pddl/25-newSolvers/FolTest/Learning/trained_constraint_gnn_scripted.pt");
+//     return predictor;
+// }
+
+// double predictFromModel(rai::Configuration& C, const StringAA& actionSequence) {
+//     try {
+//         ModelPredictor& predictor = getModelPredictorSingleton();
+//         torch::Tensor prediction = predictor.predict(C, actionSequence);
+//         return prediction.item<double>();
+//     } catch (const std::exception& e) {
+//         std::cerr << "Model prediction failed: " << e.what() << std::endl;
+//         return 0.0;
+//     }
+// }
+
+// // taskPlan to StringAA
+// StringAA taskPlanToStringAA(const rai::TaskPlan& taskPlan) {
+//     StringAA actionSequence;
+//     for (const auto& action : taskPlan.actions) {
+//         actionSequence.append(action.objects);
+//     }
+//     return actionSequence;
+// }
+
+void GittinsNode::initBanditProcess() {
+    // Default implementation - can be overridden by derived classes
+    // For now, create an empty BanditProcess
+    banditProcess = std::make_unique<rai::BanditProcess>();
 }
 
-double predictFromModel(rai::Configuration& C, const StringAA& actionSequence) {
-    try {
-        ModelPredictor& predictor = getModelPredictorSingleton();
-        torch::Tensor prediction = predictor.predict(C, actionSequence);
-        return prediction.item<double>();
-    } catch (const std::exception& e) {
-        std::cerr << "Model prediction failed: " << e.what() << std::endl;
-        return 0.0;
-    }
+rai::TaskPlan GittinsNode::getTaskPlan() {
+    return taskPlan;
 }
 
-// taskPlan to StringAA
-StringAA taskPlanToStringAA(const rai::TaskPlan& taskPlan) {
-    StringAA actionSequence;
-    for (const auto& action : taskPlan.actions) {
-        actionSequence.append(action.objects);
-    }
-    return actionSequence;
-}
+// void GittinsNode::compute() {
+//     if (rai::info().solver == "GITTINS") {
+//         if(rai::info().verbose>0){
+//             LOG(0) <<"compute at " <<name <<" ...";
+//         }
+//         c_now = -rai::cpuTime();
+//         for(int i = 0; i <= stopping_time; i++) {
+//             untimedCompute();
+//         }
+//         c_now += rai::cpuTime();
+//         c += c_now;
+//         backup_c(c_now);
+//         if(l>1e9) isFeasible=false;
+//         f_prio = computePriority();
+//         if(rai::info().verbose>0){
+//             if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
+//             else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
+//         }
+//     } else {
+//         // Use parent's implementation for non-GITTINS solvers
+//         ComputeNode::compute();
+//     }
+// }
 
 double GittinsNode::computePriority() {
     // if (rai::info().node_type == "ELS") {
@@ -40,7 +73,7 @@ double GittinsNode::computePriority() {
         return baseLevel + computePenalty();
     }
 
-    if(banditProcess->empty){
+    if(!banditProcess){
         initBanditProcess();
     }
 
@@ -48,6 +81,8 @@ double GittinsNode::computePriority() {
     // convert compute_units to double for more precise gittins index computation
     double compute_units_double = static_cast<double>(compute_units);
     auto [stopping_time, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+    // stopping_time = st; // Store stopping_time for use in compute()
+    // cout << "stopping time: " << stopping_time << " gittins index: " << gittins_index << endl;
 
     return -gittins_index;
 }

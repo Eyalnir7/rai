@@ -50,6 +50,14 @@ void rai::LGPComp2_Skeleton::createNLPs(const Configuration& C) {
   NIY;
 }
 
+double rai::LGPComp2_Skeleton::computePriority(){
+  if(root->info->solver == "GITTINS"){
+    return -2;
+  }
+  // Use parent's implementation (GittinsNode::computePriority)
+  return GittinsNode::computePriority();
+}
+
 void rai::LGPComp2_Skeleton::untimedCompute() {
   //-- get next astar solution
   actionSequence = root->tamp.getNewActionSequence();
@@ -174,7 +182,8 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
   }
 
   sol.setProblem(komoWaypoints->nlp());
-  sol.setOptions(OptOptions().set_stopEvals(sket->root->info->waypointStopEvals));
+  // sol.setOptions(OptOptions().set_stopEvals(sket->root->info->waypointStopEvals));
+  sol.setOptions(OptOptions());
   sol.setInitialization(komoWaypoints->x);
 
 }
@@ -183,6 +192,9 @@ void rai::LGPComp2_Waypoints::initBanditProcess() {
   LGPComp2_root* root = sket->root;
   if(root->info->predictionType == "GT") {
     banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_Waypoints(sket->num));
+  }
+  if(root->info->predictionType == "myopicGT"){
+    banditProcess = std::make_unique<rai::BanditProcess>(myopic_GT_BP_Waypoints(sket->num));
   }
 }
 
@@ -266,7 +278,7 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
   name <<"LGPComp2_RRTpath#" <<ways->seed <<'.' <<t;
   LGPComp2_root* root = ways->sket->root;
   rnd.seed(rndSeed);
-  isTerminal = (t+1 >= ways->komoWaypoints->T);
+  // isTerminal = (t+1 >= ways->komoWaypoints->T);
   // cout << "isTerminal: " << isTerminal << endl;
 
   if(root->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
@@ -292,6 +304,9 @@ void rai::LGPComp2_RRTpath::initBanditProcess() {
   LGPComp2_root* root = ways->sket->root;
   if(root->info->predictionType == "GT") {
     banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_RRT(ways->sket->num, t));
+  }
+  if(root->info->predictionType == "myopicGT"){
+    banditProcess = std::make_unique<rai::BanditProcess>(myopic_GT_BP_RRT(sket->num, t));
   }
 }
 
@@ -433,7 +448,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
 
 void rai::LGPComp2_OptimizePath::initBanditProcess() {
   LGPComp2_root* root = sket->root;
-  if(root->info->predictionType == "GT") {
+  if(root->info->predictionType == "GT" || root->info->predictionType == "myopicGT") {
     banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_LGP(sket->num));
   }
 }
