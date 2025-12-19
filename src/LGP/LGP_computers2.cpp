@@ -18,8 +18,8 @@
 #include <Search/NodeTypes.h>
 
 rai::LGPComp2_root::
-    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton)
-    : GittinsNode(0), C(_C), tamp(_tamp) {
+    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed)
+    : GittinsNode(0), C(_C), tamp(_tamp), runSeed(_runSeed) {
   name <<"LGPComp2_root#0";
   info = make_shared<LGP2_GlobalInfo>();
   isComplete = true;
@@ -80,7 +80,7 @@ double rai::LGPComp2_Skeleton::branchingPenalty_child(int i) {
 }
 
 std::shared_ptr<rai::ComputeNode> rai::LGPComp2_Skeleton::createNewChild(int i) {
-  return make_shared<LGPComp2_Waypoints>(this, i);
+  return make_shared<LGPComp2_Waypoints>(this, root->runSeed*10000 + i);
 }
 
 //===========================================================================
@@ -173,7 +173,6 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
   LGPComp2_root* root=sket->root;
 
   komoWaypoints = root->tamp.get_waypointsProblem(root->C, sket->actionSequence);
-
   rnd.seed(rndSeed);
   // komoWaypoints->initRandom(0);
   komoWaypoints->run_prepare(komoWaypoints->opt.waypointsInitNoise);
@@ -273,7 +272,7 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_Waypoints::createNewChild(int i)
 //  if(i==0){
 //    return make_shared<LGPComp2_OptimizePath>(this);
 //  }else if(i==1){
-  return make_shared<LGPComp2_RRTpath>(this, this, 0, i);
+  return make_shared<LGPComp2_RRTpath>(this, this, 0, seed+i);
 //  }else HALT("only 2 options for child below waypoints");
   return std::shared_ptr<rai::ComputeNode>();
 }
@@ -361,11 +360,11 @@ std::shared_ptr<rai::ComputeNode> rai::LGPComp2_RRTpath::createNewChild(int i) {
   // CHECK(!i, "only single child");
   // cout << "creating child from RRTpath at t=" << t << "node ID:" << ID<< endl;
   if(t+1 < ways->komoWaypoints->T) {
-    auto rrt =  make_shared<LGPComp2_RRTpath>(this, ways, t+1, i);
+    auto rrt =  make_shared<LGPComp2_RRTpath>(this, ways, t+1, seed+i);
     rrt->prev = this;
     return rrt;
   }
-  return make_shared<LGPComp2_OptimizePath>(this, ways, i);
+  return make_shared<LGPComp2_OptimizePath>(this, ways, seed+i);
 }
 
 //===========================================================================

@@ -48,6 +48,7 @@ struct LGPComp2_root : GittinsNode {
   // FOL_World& L;
   Configuration& C;
   LGP_TAMP_Abstraction& tamp;
+  int runSeed;
   // bool useBroadCollisions=false;
   // StringA explicitCollisions;
   // StringA explicitLift;
@@ -56,7 +57,7 @@ struct LGPComp2_root : GittinsNode {
   std::shared_ptr<LGP2_GlobalInfo> info;
   bool fixedSkeleton=false;
 
-  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton);
+  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed);
 
   virtual rai::Configuration* getConfiguration() override { return &C; }
   virtual void untimedCompute() {}
@@ -140,6 +141,7 @@ struct LGPComp2_Waypoints : GittinsNode {
   std::shared_ptr<KOMO> komoWaypoints;
   NLP_Solver sol;
   NLP_GraphSolver gsol;
+  std::shared_ptr<LGP2_GlobalInfo> info = make_shared<LGP2_GlobalInfo>();
 
   LGPComp2_Waypoints(LGPComp2_Skeleton* _sket, int rndSeed);
 
@@ -161,6 +163,7 @@ struct LGPComp2_RRTpath : GittinsNode {
   LGPComp2_RRTpath* prev=0;
   LGPComp2_Skeleton *sket=0;
   int seed = 0;
+  std::shared_ptr<LGP2_GlobalInfo> info = make_shared<LGP2_GlobalInfo>();
 
   shared_ptr<Configuration> C;
   uint t;
@@ -188,6 +191,7 @@ struct LGPComp2_OptimizePath : GittinsNode {
   LGPComp2_Skeleton* sket=0;
   LGPComp2_Waypoints* ways=0;
   int seed=0;
+  std::shared_ptr<LGP2_GlobalInfo> info = make_shared<LGP2_GlobalInfo>();
 
   shared_ptr<KOMO> komoPath;
   NLP_Solver sol;
