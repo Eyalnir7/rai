@@ -20,7 +20,7 @@ BanditProcess GT_BP_LGP(int planID) {
     chains.append(mc);
     
     // TODO: Create and configure BanditProcess
-    BanditProcess bp(chains);
+    BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::LGPPathNode;
     
     return bp;
@@ -64,7 +64,7 @@ BanditProcess GT_BP_RRT(int planID, int numAction) {
 
     
     // TODO: Create and configure BanditProcess
-    BanditProcess bp(chains);
+    BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::RRTNode;
     
     return bp;
@@ -109,7 +109,7 @@ BanditProcess GT_BP_Waypoints(int planID) {
 
     
     // TODO: Create and configure BanditProcess
-    BanditProcess bp(chains);
+    BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::WaypointsNode;
     
     return bp;
@@ -132,7 +132,7 @@ BanditProcess myopic_GT_BP_Waypoints(int planID) {
     chains.append(mc);
     
     // Create and configure BanditProcess
-    BanditProcess bp(chains);
+    BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::WaypointsNode;
     
     return bp;
@@ -155,7 +155,7 @@ BanditProcess myopic_GT_BP_RRT(int planID, int numAction) {
     chains.append(mc);
     
     // Create and configure BanditProcess
-    BanditProcess bp(chains);
+    BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::RRTNode;
     
     return bp;

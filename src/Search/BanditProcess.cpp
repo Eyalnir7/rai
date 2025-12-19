@@ -5,9 +5,6 @@
 
 namespace rai {
 
-// Define the static member
-double BanditProcess::beta = 0.99;
-
 std::pair<int, double> BanditProcess::compute_gittins_index(double state) const {
     if (empty) {
         // You can decide what makes sense here; throwing is safest.

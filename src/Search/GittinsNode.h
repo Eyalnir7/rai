@@ -13,7 +13,7 @@ struct GittinsNode : rai::ComputeNode {
   
   rai::TaskPlan taskPlan = rai::TaskPlan();
   std::unique_ptr<rai::BanditProcess> banditProcess = nullptr;
-  // int stopping_time = 0;
+  int stopping_time = 0;
   
   // Virtual function to get configuration - returns nullptr by default
   virtual rai::Configuration* getConfiguration() { return nullptr; }
@@ -23,7 +23,7 @@ struct GittinsNode : rai::ComputeNode {
   virtual rai::TaskPlan getTaskPlan();
   virtual rai::NodeType getNodeType() { return rai::NodeType::Other; }
 
-  // void compute() override;
+  void compute() override;
   double computePriority() override;
 
 

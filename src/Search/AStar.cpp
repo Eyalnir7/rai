@@ -76,12 +76,6 @@ void rai::AStar::step(bool fol) {
     node->compute();
   }
 
-  bool becameComplete = (!wasComplete && node->isComplete);
-  if(becameComplete && !fol && opt.verbose>=1){
-    printFrontier();
-    std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
-  }
-
   //depending on state -> drop, reinsert, save as solution, or expand
   if(!node->isFeasible){ //drop node completely
 
@@ -125,6 +119,13 @@ void rai::AStar::step(bool fol) {
   if(siblingToBeAdded){
     addToQueue(siblingToBeAdded);
   }
+
+  bool becameComplete = (!wasComplete && node->isComplete);
+  if(becameComplete && !fol && opt.verbose>=1){
+    printFrontier();
+    std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
+  }
+
 }
 
 bool rai::AStar::run(int stepsLimit) {

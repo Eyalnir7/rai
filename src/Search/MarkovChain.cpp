@@ -1,4 +1,5 @@
 #include "MarkovChain.h"
+#include <Core/util.h>
 
 #include <algorithm>
 #include <cassert>
@@ -6,6 +7,9 @@
 #include <stdexcept>
 #include <utility>   // std::move
 #include <limits>    // infinity, quiet_NaN
+
+// Define and initialize static member from config
+double MarkovChain::beta = rai::getParameter<double>("Bandit/beta", 0.9999);
 
 // ======== Public methods ========
 

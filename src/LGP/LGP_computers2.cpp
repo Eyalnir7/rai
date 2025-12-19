@@ -191,15 +191,23 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 void rai::LGPComp2_Waypoints::initBanditProcess() {
   LGPComp2_root* root = sket->root;
   if(root->info->predictionType == "GT") {
-    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_Waypoints(sket->num));
+    auto bp = GT_BP_Waypoints(sket->num);
+    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
   }
   if(root->info->predictionType == "myopicGT"){
-    banditProcess = std::make_unique<rai::BanditProcess>(myopic_GT_BP_Waypoints(sket->num));
+    auto bp = myopic_GT_BP_Waypoints(sket->num);
+    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
   }
 }
 
 void rai::LGPComp2_Waypoints::untimedCompute() {
   LGPComp2_root* root=sket->root;
+
+  // Safety check: if already complete and komoWaypoints has been cleaned up, don't compute again
+  if(isComplete && !komoWaypoints) {
+    LOG(-1) <<"Waypoints already completed - cannot compute again";
+    return;
+  }
 
   std::shared_ptr<SolverReturn> ret;
   if(sket->root->info->useSequentialWaypointSolver) {
@@ -276,6 +284,7 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
   : GittinsNode(_par), ways(_ways), sket(_ways->sket), t(_t) {
   if(!t) CHECK_EQ(_par, _ways, "");
   name <<"LGPComp2_RRTpath#" <<ways->seed <<'.' <<t;
+  taskPlan = TaskPlan(sket->actionSequence);  // Initialize taskPlan from skeleton
   LGPComp2_root* root = ways->sket->root;
   rnd.seed(rndSeed);
   // isTerminal = (t+1 >= ways->komoWaypoints->T);
@@ -303,10 +312,12 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 void rai::LGPComp2_RRTpath::initBanditProcess() {
   LGPComp2_root* root = ways->sket->root;
   if(root->info->predictionType == "GT") {
-    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_RRT(ways->sket->num, t));
+    auto bp = GT_BP_RRT(ways->sket->num, t);
+    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
   }
   if(root->info->predictionType == "myopicGT"){
-    banditProcess = std::make_unique<rai::BanditProcess>(myopic_GT_BP_RRT(sket->num, t));
+    auto bp = myopic_GT_BP_RRT(sket->num, t);
+    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
   }
 }
 
@@ -316,6 +327,12 @@ double rai::LGPComp2_RRTpath::branchingPenalty_child(int i) {
 
 void rai::LGPComp2_RRTpath::untimedCompute() {
   LGPComp2_root* root = ways->sket->root;
+
+  // Safety check: if rrt has been reset (after completion), don't compute again
+  if(!rrt) {
+    LOG(-1) <<"RRT already completed and reset - cannot compute again";
+    return;
+  }
 
   int r=0;
   double quantum = root->info->quantum;
@@ -449,11 +466,18 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
 void rai::LGPComp2_OptimizePath::initBanditProcess() {
   LGPComp2_root* root = sket->root;
   if(root->info->predictionType == "GT" || root->info->predictionType == "myopicGT") {
-    banditProcess = std::make_unique<rai::BanditProcess>(GT_BP_LGP(sket->num));
+    auto bp = GT_BP_LGP(sket->num);
+    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
   }
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {
+  // Safety check: if komoPath has been reset (after completion), don't compute again
+  if(!komoPath) {
+    LOG(-1) <<"Path optimization already completed and reset - cannot compute again";
+    return;
+  }
+
   for(uint i=0; i<5; i++) if(sol.step()) break;
 
   LGPComp2_root* root = sket->root;

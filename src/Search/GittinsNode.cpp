@@ -41,29 +41,29 @@ rai::TaskPlan GittinsNode::getTaskPlan() {
     return taskPlan;
 }
 
-// void GittinsNode::compute() {
-//     if (rai::info().solver == "GITTINS") {
-//         if(rai::info().verbose>0){
-//             LOG(0) <<"compute at " <<name <<" ...";
-//         }
-//         c_now = -rai::cpuTime();
-//         for(int i = 0; i <= stopping_time; i++) {
-//             untimedCompute();
-//         }
-//         c_now += rai::cpuTime();
-//         c += c_now;
-//         backup_c(c_now);
-//         if(l>1e9) isFeasible=false;
-//         f_prio = computePriority();
-//         if(rai::info().verbose>0){
-//             if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
-//             else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
-//         }
-//     } else {
-//         // Use parent's implementation for non-GITTINS solvers
-//         ComputeNode::compute();
-//     }
-// }
+void GittinsNode::compute() {
+    if (rai::info().solver == "GITTINS") {
+        if(rai::info().verbose>0){
+            LOG(0) <<"compute at " <<name <<" ...";
+        }
+        c_now = -rai::cpuTime();
+        for(int i = 0; i <= int(stopping_time*1) && !isComplete; i++) {
+            untimedCompute();
+        }
+        c_now += rai::cpuTime();
+        c += c_now;
+        backup_c(c_now);
+        if(l>1e9) isFeasible=false;
+        f_prio = computePriority();
+        if(rai::info().verbose>0){
+            if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
+            else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
+        }
+    } else {
+        // Use parent's implementation for non-GITTINS solvers
+        ComputeNode::compute();
+    }
+}
 
 double GittinsNode::computePriority() {
     // if (rai::info().node_type == "ELS") {
@@ -80,9 +80,9 @@ double GittinsNode::computePriority() {
     int compute_units= c/banditProcess->sigma;
     // convert compute_units to double for more precise gittins index computation
     double compute_units_double = static_cast<double>(compute_units);
-    auto [stopping_time, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
-    // stopping_time = st; // Store stopping_time for use in compute()
-    // cout << "stopping time: " << stopping_time << " gittins index: " << gittins_index << endl;
+    auto [st, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+    stopping_time = st; // Store stopping_time for use in compute()
+    // cout << "stopping time: " << st << " gittins index: " << gittins_index << endl;
 
     return -gittins_index;
 }

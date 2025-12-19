@@ -12,7 +12,7 @@ enum class BanditType {
 
 class MarkovChain {
 public:
-    static constexpr double beta = 0.99;
+    static double beta;
 
     // Default constructor
     MarkovChain() : type_(BanditType::LINE) {}

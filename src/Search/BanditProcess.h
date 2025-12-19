@@ -6,8 +6,14 @@
 #include <utility>
 
 namespace rai {
-    struct BanditProcess {
-        static double beta; // discount factor
+
+struct Bandit_GlobalInfo {
+  RAI_PARAM("Bandit/", double, beta, 0.9999)
+};
+
+struct BanditProcess {
+        Bandit_GlobalInfo opt = Bandit_GlobalInfo();
+        double beta = opt.beta; // discount factor
         double sigma = 0.01; // quantized time unit (in seconds)
         Array<MarkovChain> markovChains;
         bool empty = true;
@@ -15,16 +21,18 @@ namespace rai {
         NodeType nodeType;
 
         BanditProcess()
-        :sigma(0.01),
+        :opt(),
+        beta(opt.beta),
+        sigma(0.01),
         empty(true)
         {}
 
         explicit BanditProcess(const Array<MarkovChain>& chains)
-            : sigma(0.01), markovChains(chains), empty(chains.N == 0) {}
+            : opt(), beta(opt.beta), sigma(0.01), markovChains(chains), empty(chains.N == 0) {}
 
       // Optional move version (recommended)
         explicit BanditProcess(Array<MarkovChain>&& chains)
-            : sigma(0.01), markovChains(std::move(chains)), empty(markovChains.N == 0) {}
+            : opt(), beta(opt.beta), sigma(0.01), markovChains(std::move(chains)), empty(markovChains.N == 0) {}
 
         virtual ~BanditProcess() = default;
         
