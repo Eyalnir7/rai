@@ -57,7 +57,8 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm);
 IntermediateHeteroData get_hetero_data_input(
     rai::Configuration& C,
     StringAA task_plan,
-    torch::Device device);
+    torch::Device device,
+    int action_number = -1);
 
 
 

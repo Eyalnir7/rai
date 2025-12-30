@@ -23,6 +23,9 @@ rai::LGPComp2_root::
   name <<"LGPComp2_root#0";
   info = make_shared<LGP2_GlobalInfo>();
   isComplete = true;
+  
+  // Initialize NodePredictor (handles all prediction types)
+  predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelDir.p);
 }
 
 double rai::LGPComp2_root::branchingPenalty_child(int i) {
@@ -189,14 +192,8 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 
 void rai::LGPComp2_Waypoints::initBanditProcess() {
   LGPComp2_root* root = sket->root;
-  if(root->info->predictionType == "GT") {
-    auto bp = GT_BP_Waypoints(sket->num);
-    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
-  }
-  if(root->info->predictionType == "myopicGT"){
-    auto bp = myopic_GT_BP_Waypoints(sket->num);
-    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
-  }
+  auto bp = root->predictor->predict_waypoints(sket->num, root->C, sket->actionSequence);
+  banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
 void rai::LGPComp2_Waypoints::untimedCompute() {
@@ -310,14 +307,8 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 
 void rai::LGPComp2_RRTpath::initBanditProcess() {
   LGPComp2_root* root = ways->sket->root;
-  if(root->info->predictionType == "GT") {
-    auto bp = GT_BP_RRT(ways->sket->num, t);
-    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
-  }
-  if(root->info->predictionType == "myopicGT"){
-    auto bp = myopic_GT_BP_RRT(sket->num, t);
-    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
-  }
+  auto bp = root->predictor->predict_rrt(sket->num, t, root->C, sket->actionSequence);
+  banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
 double rai::LGPComp2_RRTpath::branchingPenalty_child(int i) {
@@ -464,10 +455,8 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
 
 void rai::LGPComp2_OptimizePath::initBanditProcess() {
   LGPComp2_root* root = sket->root;
-  if(root->info->predictionType == "GT" || root->info->predictionType == "myopicGT") {
-    auto bp = GT_BP_LGP(sket->num);
-    banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
-  }
+  auto bp = root->predictor->predict_lgp(sket->num, root->C, sket->actionSequence);
+  banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {

@@ -189,9 +189,24 @@ std::vector<rai::Frame*> getCloseObstacles(
 IntermediateHeteroData get_hetero_data_input(
     rai::Configuration& C,
     StringAA task_plan,
-    torch::Device device) {
+    torch::Device device,
+    int action_number) {
     
     IntermediateHeteroData result;
+    
+    // Filter task_plan based on action_number (similar to Python implementation)
+    StringAA filtered_task_plan;
+    if (action_number >= 0) {
+        if (action_number == 0) {
+            // Only take the first action
+            filtered_task_plan.append(task_plan(0));
+        } else {
+            // Take the previous action and the current action
+            filtered_task_plan.append(task_plan(action_number - 1));
+            filtered_task_plan.append(task_plan(action_number));
+        }
+        task_plan = filtered_task_plan;
+    }
     
     // Track objects to times mapping (equivalent to objects_to_times in Python)
     std::map<std::string, std::set<int>> objects_to_times;

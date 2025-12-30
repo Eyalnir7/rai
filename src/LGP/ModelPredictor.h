@@ -1,7 +1,18 @@
 #pragma once
 
+// Save RAI macros before including torch
+#pragma push_macro("LOG")
+#pragma push_macro("CHECK")
+#undef LOG
+#undef CHECK
+
 #include <torch/torch.h>
 #include <torch/script.h>
+
+// Restore RAI macros after torch includes
+#pragma pop_macro("CHECK")
+#pragma pop_macro("LOG")
+
 #include <LGP/LGP_TAMP_Abstraction.h>
 #include "HeteroGraph.h"
 #include "HeteroGraphConverter.h"
@@ -57,4 +68,9 @@ private:
      * @return torch::Tensor The model output
      */
     torch::Tensor runModelForward(const HeteroGraph& g);
+    
+    /**
+     * @brief Warm up the model with dummy forward passes to trigger JIT compilation
+     */
+    void warmUp();
 };

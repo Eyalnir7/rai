@@ -14,6 +14,7 @@
 #include "../Optim/NLP_GraphSolver.h"
 #include "../PathAlgos/RRT_PathFinder.h"
 #include "LGP_TAMP_Abstraction.h"
+#include "ModelPredictor.h"
 #include <Search/GittinsNode.h>
 #include <Search/NodeTypes.h>
 #include <regex>
@@ -39,7 +40,8 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("", rai::String, solver, "ELS")
   RAI_PARAM("LGP/", double, quantum, 0.01)
   RAI_PARAM("", int, numTaskPlans, 20)
-  RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none
+  RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none / GNN
+  RAI_PARAM("GNN/", rai::String, modelDir, "models/")
 };
 
 //===========================================================================
@@ -56,6 +58,9 @@ struct LGPComp2_root : GittinsNode {
   // std::shared_ptr<rai::AStar> fol_astar;
   std::shared_ptr<LGP2_GlobalInfo> info;
   bool fixedSkeleton=false;
+  
+  // NodePredictor manages all prediction logic (GT, myopicGT, GNN)
+  std::shared_ptr<NodePredictor> predictor;
 
   LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed);
 
