@@ -96,117 +96,110 @@ BanditProcess NodePredictor::predict_lgp(int planID, Configuration& C, StringAA 
 /**
  * @brief Construct a MarkovChain from predicted quantiles and average feasibility
  * 
- * This function implements the logic from get_chain_probs_from_quantile_values in Python.
+ * This function implements the logic from get_chain_probs_from_quantile_values_new_format in Python.
  * It takes predicted quantiles for feasible and infeasible outcomes, along with the
  * quantile levels and average feasibility, and constructs transition probabilities
- * for a MarkovChain.
+ * for a MarkovChain using a running sum approach.
  * 
- * @param feas_quantiles Vector of time quantiles for feasible outcomes (sorted)
- * @param infeas_quantiles Vector of time quantiles for infeasible outcomes (sorted)
+ * @param feas_quantiles Vector of time quantiles for feasible outcomes (integers)
+ * @param infeas_quantiles Vector of time quantiles for infeasible outcomes (integers)
  * @param quantile_levels Vector of quantile levels in (0,1], e.g., [0.5, 0.9]
  * @param avgFeas Average feasibility probability in [0,1]
  * @return MarkovChain constructed from the quantile predictions
  */
 MarkovChain get_markov_chain_from_quantiles(
-    const std::vector<double>& feas_quantiles,
-    const std::vector<double>& infeas_quantiles,
+    const std::vector<int>& feas_quantiles,
+    const std::vector<int>& infeas_quantiles,
     const std::vector<double>& quantile_levels,
     double avgFeas
 ) {
-    // Merge and sort all unique quantile times (rounded to ints)
+    // Get unique sorted quantiles from both arrays
     std::set<int> quantiles_set;
-    for (double q : feas_quantiles) {
-        quantiles_set.insert(static_cast<int>(std::round(q)));
+    for (int q : feas_quantiles) {
+        quantiles_set.insert(q);
     }
-    for (double q : infeas_quantiles) {
-        quantiles_set.insert(static_cast<int>(std::round(q)));
+    for (int q : infeas_quantiles) {
+        quantiles_set.insert(q);
     }
-    std::vector<int> quantiles(quantiles_set.begin(), quantiles_set.end());
+    std::vector<int> unique_quantiles(quantiles_set.begin(), quantiles_set.end());
     
-    std::vector<double> feas_probs;
-    std::vector<double> infeas_probs;
-    std::vector<int> times;
+    // Create boolean arrays indicating membership in original arrays
+    std::vector<bool> in_feas_quantile;
+    std::vector<bool> in_infeas_quantile;
     
-    for (int q : quantiles) {
-        double feas_prob = 0.0;
-        double infeas_prob = 0.0;
+    for (int Aq : unique_quantiles) {
+        bool is_in_feas = std::find(feas_quantiles.begin(), feas_quantiles.end(), Aq) != feas_quantiles.end();
+        in_feas_quantile.push_back(is_in_feas);
         
-        // Check if q matches any feas_quantile (rounded)
-        auto feas_it = std::find_if(feas_quantiles.begin(), feas_quantiles.end(),
-                                     [q](double val) { return static_cast<int>(std::round(val)) == q; });
+        bool is_in_infeas = std::find(infeas_quantiles.begin(), infeas_quantiles.end(), Aq) != infeas_quantiles.end();
+        in_infeas_quantile.push_back(is_in_infeas);
+    }
+    
+    // Compute transition probabilities using running sum approach
+    std::vector<double> done_trans;
+    std::vector<double> fail_trans;
+    double sum_done = 0.0;
+    double sum_fail = 0.0;
+    double next_transition = 1.0;
+    int done_index = 0;
+    int fail_index = 0;
+    int last_quantile = 0;
+    double current_done_transition = 0.0;
+    double current_fail_transition = 0.0;
+    
+    for (size_t i = 0; i < unique_quantiles.size(); ++i) {
+        int Aq = unique_quantiles[i];
+        current_done_transition = 0.0;
+        current_fail_transition = 0.0;
         
-        if (feas_it != feas_quantiles.end()) {
-            int quantile_idx = std::distance(feas_quantiles.begin(), feas_it);
-            double current_level = quantile_levels[quantile_idx];
-            
-            // Find previous quantile level (or 0 if first)
-            double prev_level = (quantile_idx > 0) ? quantile_levels[quantile_idx - 1] : 0.0;
-            double delta_level = current_level - prev_level;
-            
-            // Find corresponding infeasible quantile level
-            auto infeas_upper = std::upper_bound(infeas_quantiles.begin(), infeas_quantiles.end(), q);
-            int infeas_quantile_index = std::distance(infeas_quantiles.begin(), infeas_upper);
-            double infeas_level = (infeas_quantile_index < quantile_levels.size()) 
-                                  ? quantile_levels[infeas_quantile_index] : 1.0;
-            
-            // Compute feasible transition probability
-            double denominator = 1.0 - avgFeas * current_level - (1.0 - avgFeas) * infeas_level 
-                               + avgFeas * delta_level;
-            if (std::abs(denominator) > 1e-10) {
-                feas_prob = avgFeas * delta_level / denominator;
+        if (in_feas_quantile[i]) {
+            // Handle repeated quantiles by removing previous transition
+            if (Aq == last_quantile && !done_trans.empty()) {
+                done_trans.pop_back();
             }
+            double qi = quantile_levels[done_index];
+            current_done_transition = (avgFeas * qi - sum_done) / next_transition;
+            sum_done += current_done_transition;
+            done_index++;
+            done_trans.push_back(current_done_transition);
         }
         
-        // Check if q matches any infeas_quantile (rounded)
-        auto infeas_it = std::find_if(infeas_quantiles.begin(), infeas_quantiles.end(),
-                                       [q](double val) { return static_cast<int>(std::round(val)) == q; });
-        
-        if (infeas_it != infeas_quantiles.end()) {
-            int quantile_idx = std::distance(infeas_quantiles.begin(), infeas_it);
-            double current_level = quantile_levels[quantile_idx];
-            
-            // Find previous quantile level (or 0 if first)
-            double prev_level = (quantile_idx > 0) ? quantile_levels[quantile_idx - 1] : 0.0;
-            double delta_level = current_level - prev_level;
-            
-            // Find corresponding feasible quantile level
-            auto feas_upper = std::upper_bound(feas_quantiles.begin(), feas_quantiles.end(), q);
-            int feas_quantile_index = std::distance(feas_quantiles.begin(), feas_upper);
-            double feas_level = (feas_quantile_index < quantile_levels.size()) 
-                              ? quantile_levels[feas_quantile_index] : 1.0;
-            
-            // Compute infeasible transition probability
-            double denominator = 1.0 - avgFeas * feas_level - (1.0 - avgFeas) * current_level 
-                               + (1.0 - avgFeas) * delta_level;
-            if (std::abs(denominator) > 1e-10) {
-                infeas_prob = (1.0 - avgFeas) * delta_level / denominator;
+        if (in_infeas_quantile[i]) {
+            // Handle repeated quantiles by removing previous transition
+            if (Aq == last_quantile && !fail_trans.empty()) {
+                fail_trans.pop_back();
             }
+            double qi = quantile_levels[fail_index];
+            current_fail_transition = ((1.0 - avgFeas) * qi - sum_fail) / next_transition;
+            sum_fail += current_fail_transition;
+            fail_index++;
+            fail_trans.push_back(current_fail_transition);
         }
         
-        // Only add non-zero transitions
-        if (feas_prob > 0.0) {
-            feas_probs.push_back(feas_prob);
-            times.push_back(q);
-        }
-        if (infeas_prob > 0.0) {
-            infeas_probs.push_back(infeas_prob);
-            times.push_back(q);
-        }
+        next_transition = next_transition * (1.0 - current_done_transition - current_fail_transition);
+        last_quantile = Aq;
     }
     
-    // Separate times for done and fail transitions
-    std::vector<int> done_times;
-    std::vector<int> fail_times;
+    // Make feas_quantiles and infeas_quantiles unique and sorted for output
+    std::set<int> feas_set(feas_quantiles.begin(), feas_quantiles.end());
+    std::vector<int> unique_feas_quantiles(feas_set.begin(), feas_set.end());
     
-    for (size_t i = 0; i < feas_probs.size(); ++i) {
-        done_times.push_back(times[i]);
-    }
-    for (size_t i = 0; i < infeas_probs.size(); ++i) {
-        fail_times.push_back(times[feas_probs.size() + i]);
+    std::set<int> infeas_set(infeas_quantiles.begin(), infeas_quantiles.end());
+    std::vector<int> unique_infeas_quantiles(infeas_set.begin(), infeas_set.end());
+    
+    // Add remaining probability to last fail transition
+    if (!fail_trans.empty()) {
+        if(in_feas_quantile[unique_quantiles.size()-1]){
+            fail_trans.push_back((1.0 - current_done_transition - current_fail_transition));
+            unique_infeas_quantiles.push_back(unique_quantiles[unique_quantiles.size()-1]);
+        }
+        else{
+            fail_trans.back() += (1.0 - current_done_transition - current_fail_transition);
+        }
     }
     
     // Construct and return MarkovChain
-    return MarkovChain(feas_probs, done_times, infeas_probs, fail_times, BanditType::LINE);
+    return MarkovChain(done_trans, unique_feas_quantiles, fail_trans, unique_infeas_quantiles, BanditType::LINE);
 }
 
 //===========================================================================
