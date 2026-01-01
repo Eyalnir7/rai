@@ -14,8 +14,8 @@
 #pragma pop_macro("LOG")
 
 #include <LGP/LGP_TAMP_Abstraction.h>
-#include "HeteroGraph.h"
-#include "HeteroGraphConverter.h"
+#include <LGP/HeteroGraph.h>
+#include <LGP/HeteroGraphConverter.h>
 
 /**
  * @brief Class for loading and running a scripted PyTorch model for constraint prediction
@@ -40,7 +40,7 @@ public:
      * @param task_plan The sequence of actions
      * @return torch::Tensor The model's prediction output
      */
-    torch::Tensor predict(rai::Configuration& C, const StringAA& task_plan);
+    torch::Tensor predict(rai::Configuration& C, const StringAA& task_plan, int action_num=-1);
     
     /**
      * @brief Check if the model is loaded

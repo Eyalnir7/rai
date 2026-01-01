@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <Kin/frame.h>
 #include <Kin/kin.h>
-#include <torch/torch.h>
 #include <Core/util.h> 
 #include "HeteroGraphConverter.h"
 #include "HeteroGraph.h"
@@ -344,25 +343,43 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
     // ---- INSERT NODES INTO DICTIONARIES ----
     for (auto& nt : nodeTypes) {
         const auto& names = nt.data->names;
+        size_t num_nodes = names.size();
+        
+        // Sanity check for corrupted size
+        if (num_nodes > 1000000) {
+            std::cerr << "ERROR: Suspiciously large number of nodes (" << num_nodes 
+                      << ") for type " << nt.type << std::endl;
+            continue;
+        }
+        
+        // Debug: Check times vector size matches nodes
+        if (nt.data->times.size() != num_nodes) {
+            std::cerr << "ERROR: Mismatch for " << nt.type << " - names.size()=" 
+                      << num_nodes << " but times.size()=" << nt.data->times.size() << std::endl;
+            continue;
+        }
 
         // record mapping for later edge construction
-        for (int i = 0; i < (int)names.size(); i++)
+        for (int i = 0; i < (int)num_nodes; i++)
             name_to_type_idx[std::string(names[i])] = {nt.type, i};
 
-        // fill features
-        g.x_dict[nt.type] = stack_or_empty(nt.data->features);
+        // fill features (only for feature node types, not constraint types pick/place)
+        if (nt.type != "pick" && nt.type != "place") {
+            torch::Tensor features = stack_or_empty(nt.data->features);
+            if (features.defined() && features.numel() > 0) {
+                g.x_dict[nt.type] = features;
+            }
+        }
 
-        // fill times
-        torch::Tensor t = torch::tensor(nt.data->times, torch::kLong);
-        g.times_dict[nt.type] = t;
+        // fill times - but only if we have nodes
+        if (num_nodes > 0) {
+            torch::Tensor t = torch::tensor(nt.data->times, torch::kLong);
+            g.times_dict[nt.type] = t;
+        }
 
-        // actives not being used → fill with zeros
-        g.actives_dict[nt.type] = torch::zeros({(long)names.size()}, torch::kBool);
+        // batch indices: all zeros for single graph (not batched)
+        g.batch_dict[nt.type] = torch::zeros({(long)num_nodes}, torch::kLong);
     }
-
-    // special counters
-    g.num_pick_nodes  = interm.pick_nodes.names.size();
-    g.num_place_nodes = interm.place_nodes.names.size();
 
     // ---- BUILD EDGE INDEX DICTIONARY ----
 

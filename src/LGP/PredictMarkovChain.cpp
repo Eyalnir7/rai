@@ -53,7 +53,10 @@ BanditProcess NodePredictor::predict_waypoints(int planID, Configuration& C, Str
   } else if(predictionType == "myopicGT") {
     return myopic_GT_BP_Waypoints(planID);
   } else if(predictionType == "GNN") {
-    return GNN_predict_waypoints(C, taskPlan);
+    Array<MarkovChain> chains = GNN_predict_waypoints_chains(C, taskPlan);
+    BanditProcess bp(std::move(chains));
+    bp.nodeType = NodeType::WaypointsNode;
+    return bp;
   } else {
     // Default: return empty BanditProcess for "none" or unknown types
     Array<MarkovChain> chains;
@@ -67,7 +70,10 @@ BanditProcess NodePredictor::predict_rrt(int planID, int numAction, Configuratio
   } else if(predictionType == "myopicGT") {
     return myopic_GT_BP_RRT(planID, numAction);
   } else if(predictionType == "GNN") {
-    return GNN_predict_rrt(C, taskPlan, numAction);
+    Array<MarkovChain> chains = GNN_predict_rrt_chains(C, taskPlan, numAction);
+    BanditProcess bp(std::move(chains));
+    bp.nodeType = NodeType::RRTNode;
+    return bp;
   } else {
     // Default: return empty BanditProcess for "none" or unknown types
     Array<MarkovChain> chains;
@@ -81,7 +87,10 @@ BanditProcess NodePredictor::predict_lgp(int planID, Configuration& C, StringAA 
   } else if(predictionType == "myopicGT") {
     return GT_BP_LGP(planID);  // myopicGT uses same for LGP
   } else if(predictionType == "GNN") {
-    return GNN_predict_lgp(C, taskPlan);
+    Array<MarkovChain> chains = GNN_predict_lgp_chains(C, taskPlan);
+    BanditProcess bp(std::move(chains));
+    bp.nodeType = NodeType::LGPPathNode;
+    return bp;
   } else {
     // Default: return empty BanditProcess for "none" or unknown types
     Array<MarkovChain> chains;
@@ -364,35 +373,81 @@ BanditProcess myopic_GT_BP_RRT(int planID, int numAction) {
     return bp;
 }
 
-BanditProcess NodePredictor::GNN_predict_waypoints(Configuration& C, StringAA taskPlan){
+MarkovChain NodePredictor::convert_tensors_to_markov_chain(
+    torch::Tensor& feasibility,
+    torch::Tensor& feas_quantiles_tensor,
+    torch::Tensor& infeas_quantiles_tensor) {
+    
+    // Convert feasibility tensor (size 1) to double
+    double avgFeas = feasibility.item<double>();
+    
+    // Convert quantile tensors (size 5) to std::vector<int> by rounding up
+    std::vector<int> feas_quantiles_vec;
+    std::vector<int> infeas_quantiles_vec;
+    
+    auto feas_accessor = feas_quantiles_tensor.accessor<float, 1>();
+    for (int i = 0; i < feas_accessor.size(0); ++i) {
+        feas_quantiles_vec.push_back(static_cast<int>(std::ceil(feas_accessor[i])));
+    }
+    
+    auto infeas_accessor = infeas_quantiles_tensor.accessor<float, 1>();
+    for (int i = 0; i < infeas_accessor.size(0); ++i) {
+        infeas_quantiles_vec.push_back(static_cast<int>(std::ceil(infeas_accessor[i])));
+    }
+    
+    // Define quantile levels (assuming 5 quantiles)
+    std::vector<double> quantile_levels = {0.1, 0.3, 0.5, 0.7, 0.9};
+    
+    // Get MarkovChain from quantiles
+    return get_markov_chain_from_quantiles(feas_quantiles_vec, infeas_quantiles_vec, quantile_levels, avgFeas);
+}
+
+Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
     torch::Tensor feasibility = model_feasibility_waypoints->predict(C, taskPlan);
     torch::Tensor feas_quantiles = model_qr_feas_waypoints->predict(C, taskPlan);
     torch::Tensor infeas_quantiles = model_qr_infeas_waypoints->predict(C, taskPlan);
 
-
-
-    Array<MarkovChain> chains;
-    BanditProcess bp(std::move(chains));
-    bp.nodeType = NodeType::WaypointsNode;
-    return bp;
+    Array<MarkovChain> result;
+    result.append(convert_tensors_to_markov_chain(feasibility, feas_quantiles, infeas_quantiles));
+    int planLength = taskPlan.N;
+    Array<MarkovChain> rrtChains;;
+    for(int i = 0; i < planLength; ++i) {
+        torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i);
+        std::vector<int> feas_quantiles_vec;
+        auto feas_accessor = rrt_feas_quantiles.accessor<float, 1>();
+        for (int i = 0; i < feas_accessor.size(0); ++i) {
+            feas_quantiles_vec.push_back(static_cast<int>(std::ceil(feas_accessor[i])));
+        }
+        MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9}, 1.0);
+        result.append(rrtWaypointsMC);
+    }
+    torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan);
+    torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan);
+    torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan);
+    result.append(convert_tensors_to_markov_chain(lgp_feasibility, lgp_feas_quantiles, lgp_infeas_quantiles));
+    return result;
 }
 
-BanditProcess NodePredictor::GNN_predict_rrt(Configuration& C, StringAA taskPlan, int actionNum){
+Array<MarkovChain> NodePredictor::GNN_predict_rrt_chains(Configuration& C, StringAA taskPlan, int actionNum){
     // TODO: Implement GNN-based prediction for RRT
     // Use model_qr_feas_rrt
+    cout << "not implemented yet" << endl;
     Array<MarkovChain> chains;
-    BanditProcess bp(std::move(chains));
-    bp.nodeType = NodeType::RRTNode;
-    return bp;
+    return chains;
 }
 
-BanditProcess NodePredictor::GNN_predict_lgp(Configuration& C, StringAA taskPlan){
-    // TODO: Implement GNN-based prediction for LGP
+Array<MarkovChain> NodePredictor::GNN_predict_lgp_chains(Configuration& C, StringAA taskPlan){
     // Use model_feasibility_lgp, model_qr_feas_lgp, and model_qr_infeas_lgp
+    torch::Tensor feasibility = model_feasibility_lgp->predict(C, taskPlan);
+    torch::Tensor feas_quantiles_tensor = model_qr_feas_lgp->predict(C, taskPlan);
+    torch::Tensor infeas_quantiles_tensor = model_qr_infeas_lgp->predict(C, taskPlan);
+    
+    // Convert tensors to MarkovChain
+    MarkovChain mc = convert_tensors_to_markov_chain(feasibility, feas_quantiles_tensor, infeas_quantiles_tensor);
+    
     Array<MarkovChain> chains;
-    BanditProcess bp(std::move(chains));
-    bp.nodeType = NodeType::LGPPathNode;
-    return bp;
+    chains.append(mc);
+    return chains;
 }
 
 } // namespace rai

@@ -4,6 +4,16 @@
 #include <LGP/DataManger.h>
 #include <Kin/kin.h>
 #include <memory>
+#pragma push_macro("LOG")
+#pragma push_macro("CHECK")
+#undef LOG
+#undef CHECK
+
+#include <torch/torch.h>
+
+// Restore RAI macros after torch includes
+#pragma pop_macro("CHECK")
+#pragma pop_macro("LOG")
 
 // Forward declaration (ModelPredictor is in global namespace)
 class ModelPredictor;
@@ -34,10 +44,16 @@ struct NodePredictor {
 private:
   void initializeGNNModels(const std::string& model_dir);
   
-  // GNN-based prediction methods (private - only used internally)
-  BanditProcess GNN_predict_waypoints(Configuration& C, StringAA taskPlan);
-  BanditProcess GNN_predict_rrt(Configuration& C, StringAA taskPlan, int actionNum);
-  BanditProcess GNN_predict_lgp(Configuration& C, StringAA taskPlan);
+  // Helper function to convert GNN predictions to MarkovChain
+  MarkovChain convert_tensors_to_markov_chain(
+      torch::Tensor& feasibility,
+      torch::Tensor& feas_quantiles_tensor,
+      torch::Tensor& infeas_quantiles_tensor);
+  
+  // GNN-based prediction methods (private - return MarkovChain arrays)
+  Array<MarkovChain> GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan);
+  Array<MarkovChain> GNN_predict_rrt_chains(Configuration& C, StringAA taskPlan, int actionNum);
+  Array<MarkovChain> GNN_predict_lgp_chains(Configuration& C, StringAA taskPlan);
 };
 
 // Helper function: Convert quantile predictions to MarkovChain

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "HeteroGraph.h"
-#include <torch/torch.h>
+// #include <torch/torch.h>
 #include <vector>
 #include <string>
 #include <unordered_map>

@@ -14,7 +14,7 @@
 #include "../Optim/NLP_GraphSolver.h"
 #include "../PathAlgos/RRT_PathFinder.h"
 #include "LGP_TAMP_Abstraction.h"
-#include "ModelPredictor.h"
+#include "PredictMarkovChain.h"
 #include <Search/GittinsNode.h>
 #include <Search/NodeTypes.h>
 #include <regex>
@@ -41,7 +41,7 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("LGP/", double, quantum, 0.01)
   RAI_PARAM("", int, numTaskPlans, 20)
   RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none / GNN
-  RAI_PARAM("GNN/", rai::String, modelDir, "models/")
+  RAI_PARAM("GNN/", rai::String, modelsDir, "models/")
 };
 
 //===========================================================================

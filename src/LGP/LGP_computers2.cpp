@@ -25,7 +25,7 @@ rai::LGPComp2_root::
   isComplete = true;
   
   // Initialize NodePredictor (handles all prediction types)
-  predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelDir.p);
+  predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelsDir.p);
 }
 
 double rai::LGPComp2_root::branchingPenalty_child(int i) {
@@ -306,8 +306,24 @@ rai::LGPComp2_RRTpath::LGPComp2_RRTpath(ComputeNode* _par, rai::LGPComp2_Waypoin
 }
 
 void rai::LGPComp2_RRTpath::initBanditProcess() {
-  LGPComp2_root* root = ways->sket->root;
-  auto bp = root->predictor->predict_rrt(sket->num, t, root->C, sket->actionSequence);
+  // Extract subset of MarkovChains from waypoints BanditProcess
+  // waypoints chains: [waypoints_mc, rrt_0_mc, rrt_1_mc, ..., rrt_n_mc, lgp_mc]
+  // For RRT at t, we want: [rrt_{t+1}_mc, rrt_{t+2}_mc, ..., rrt_n_mc, lgp_mc]
+  
+  if (!ways->banditProcess) {
+    LOG(-1) << "Waypoints BanditProcess not initialized!";
+    return;
+  }
+  
+  // Create new chains array starting from index (t+1)
+  Array<MarkovChain> chains;
+  for (int i = t + 1; i < ways->banditProcess->markovChains.N; ++i) {
+    chains.append(ways->banditProcess->markovChains(i));
+  }
+  
+  // Create new BanditProcess with the subset of chains
+  auto bp = BanditProcess(std::move(chains));
+  bp.nodeType = NodeType::RRTNode;
   banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
@@ -454,8 +470,26 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
 }
 
 void rai::LGPComp2_OptimizePath::initBanditProcess() {
-  LGPComp2_root* root = sket->root;
-  auto bp = root->predictor->predict_lgp(sket->num, root->C, sket->actionSequence);
+  // LGPComp2_root* root = sket->root;
+  // auto bp = root->predictor->predict_lgp(sket->num, root->C, sket->actionSequence);
+  // banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
+  if (!ways->banditProcess) {
+    LOG(-1) << "Waypoints BanditProcess not initialized!";
+    return;
+  }
+  
+  if (ways->banditProcess->markovChains.N == 0) {
+    LOG(-1) << "Waypoints BanditProcess has no chains!";
+    return;
+  }
+  
+  // Create new chains array with only the last chain (LGP chain)
+  Array<MarkovChain> chains;
+  chains.append(ways->banditProcess->markovChains.last());
+  
+  // Create new BanditProcess with only the LGP chain
+  auto bp = BanditProcess(std::move(chains));
+  bp.nodeType = NodeType::LGPPathNode;
   banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
