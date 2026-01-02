@@ -328,7 +328,7 @@ void rai::LGPComp2_RRTpath::initBanditProcess() {
   
   // Create new chains array starting from index (t+1)
   Array<MarkovChain> chains;
-  for (int i = t + 1; i < ways->banditProcess->markovChains.N; ++i) {
+  for (uint i = t + 1; i < ways->banditProcess->markovChains.N; ++i) {
     chains.append(ways->banditProcess->markovChains(i));
   }
   

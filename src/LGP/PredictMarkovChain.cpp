@@ -454,7 +454,8 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         for (int i = 0; i < feas_accessor.size(0); ++i) {
             feas_quantiles_vec.push_back(static_cast<int>(std::ceil(feas_accessor[i])));
         }
-        MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9}, 1.0);
+        feas_quantiles_vec.push_back(200);
+        MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0);
         result.append(rrtWaypointsMC);
     }
     torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan);

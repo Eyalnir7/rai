@@ -42,6 +42,7 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("", int, numTaskPlans, 20)
   RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none / GNN
   RAI_PARAM("GNN/", rai::String, modelsDir, "models/")
+  RAI_PARAM("GITTINS", int, numWaypoints, 100)
 };
 
 //===========================================================================
@@ -98,7 +99,7 @@ struct LGPComp2_Skeleton : GittinsNode {
   virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(actionSequence); }
   virtual void initBanditProcess() override;
 
-  virtual int getNumDecisions() { return (root->info->solver == "GITTINS") ? 100 : -1; }
+  virtual int getNumDecisions() { return (root->info->solver == "GITTINS") ? root->info->numWaypoints : -1; }
 //    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
 //    virtual double effortHeuristic(){ return 10.+10.; }
   virtual double branchingPenalty_child(int i);

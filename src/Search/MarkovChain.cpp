@@ -170,22 +170,30 @@ void MarkovChain::normalize_inputs() {
     assert(fail_transitions_.size() == fail_times_.size());
 
     bool assert_passed = true;
-    // cout << "Normalized MarkovChain inputs:" << std::endl;
     for (double p : done_transitions_) {
         if(p < 0.0 || p > 1.0) {
             assert_passed = false;
         }
-        // cout << p << " ";
     }
-    // cout << std::endl;
-    // cout << "normalized fail transitions:" << std::endl;
     for (double p : fail_transitions_) {
         if(p < 0.0 || p > 1.0) {
             assert_passed = false;
         }
-        // cout << p << " ";
     }
-    // cout << std::endl;
+    
+    if(!assert_passed) {
+        cout << "MarkovChain assertion failed! Transitions out of range [0, 1]:" << std::endl;
+        cout << "Done transitions: ";
+        for (double p : done_transitions_) {
+            cout << p << " ";
+        }
+        cout << std::endl;
+        cout << "Fail transitions: ";
+        for (double p : fail_transitions_) {
+            cout << p << " ";
+        }
+        cout << std::endl;
+    }
     assert(assert_passed);
 }
 

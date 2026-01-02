@@ -122,7 +122,7 @@ void rai::AStar::step(bool fol) {
 
   bool becameComplete = (!wasComplete && node->isComplete);
   if(becameComplete && !fol && opt.verbose>=1){
-    // printFrontier();
+    printFrontier();
     // convert node to GittinsNode to access taskPlan
     if(auto gittinsNode = dynamic_cast<GittinsNode*>(node)){
       std::cout <<" node '" <<*gittinsNode <<"' became complete and feas: "<< gittinsNode->isFeasible << " after: " << gittinsNode->c <<std::endl;
@@ -170,15 +170,29 @@ void rai::AStar::printFrontier() const {
   std::cout << "Priority | Node Name | Additional Info" << std::endl;
   std::cout << "---------|-----------|----------------" << std::endl;
   
+  bool seen_waypoints = false;
   while(queueCopy.N > 0) {
     TreeSearchNode* node = queueCopy.pop();
+    
+    // Only print RRT or LGP nodes, and at most one waypoints node
+    auto gittinsNode = dynamic_cast<GittinsNode*>(node);
+    if(gittinsNode) {
+      NodeType nodeType = gittinsNode->getNodeType();
+      // Skip if it's a waypoints node and we've already seen one
+      if(nodeType != NodeType::RRTNode && nodeType != NodeType::LGPPathNode) {
+        if(seen_waypoints) {
+          continue;
+        }
+        seen_waypoints = true;
+      }
+    } else {
+      continue;
+    }
     
     std::cout << std::setw(8) << std::fixed << std::setprecision(3) << node->f_prio 
               << " | " << std::setw(9) << node->name();
     
     // Check if the node is a GittinsNode and print its TaskPlan
-    auto gittinsNode = dynamic_cast<GittinsNode*>(node);
-    if(!gittinsNode) std::cout << "not gittins node" << endl;
     if(gittinsNode && !gittinsNode->taskPlan.empty) {
       std::cout << " | parent: " << *gittinsNode->parent << " | compute invested: " << gittinsNode->c;
     } else {
