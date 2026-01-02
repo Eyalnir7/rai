@@ -18,14 +18,18 @@
 #include <Search/NodeTypes.h>
 
 rai::LGPComp2_root::
-    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed)
+    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor)
     : GittinsNode(0), C(_C), tamp(_tamp), runSeed(_runSeed) {
   name <<"LGPComp2_root#0";
   info = make_shared<LGP2_GlobalInfo>();
   isComplete = true;
   
-  // Initialize NodePredictor (handles all prediction types)
-  predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelsDir.p);
+  // Use provided predictor or initialize new one
+  if (_predictor) {
+    predictor = _predictor;
+  } else {
+    predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelsDir.p);
+  }
 }
 
 double rai::LGPComp2_root::branchingPenalty_child(int i) {

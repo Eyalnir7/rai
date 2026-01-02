@@ -62,7 +62,7 @@ struct LGPComp2_root : GittinsNode {
   // NodePredictor manages all prediction logic (GT, myopicGT, GNN)
   std::shared_ptr<NodePredictor> predictor;
 
-  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed);
+  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor = nullptr);
 
   virtual rai::Configuration* getConfiguration() override { return &C; }
   virtual void untimedCompute() {}
