@@ -249,7 +249,7 @@ IntermediateHeteroData get_hetero_data_input(
         }
         objects_to_times[obj_name_std].insert(time_step);
     };
-    cout << task_plan << endl;
+    // cout << task_plan << endl;
     
     // Process task plan (equivalent to the main loop in Python)
     for (int i = 0; i < task_plan.N; i++) {

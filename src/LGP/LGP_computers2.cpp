@@ -78,6 +78,11 @@ void rai::LGPComp2_Skeleton::untimedCompute() {
   // if(root->info->verbose>1) LOG(0) <<skeleton;
 }
 
+void rai::LGPComp2_Skeleton::initBanditProcess() {
+  auto bp = root->predictor->predict_waypoints(num, root->C, actionSequence);
+  banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
+}
+
 double rai::LGPComp2_Skeleton::branchingPenalty_child(int i) {
   return ::pow(double(i)/root->info->waypoint_w0, root->info->waypoint_wP);
 }
@@ -191,9 +196,11 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 }
 
 void rai::LGPComp2_Waypoints::initBanditProcess() {
-  LGPComp2_root* root = sket->root;
-  auto bp = root->predictor->predict_waypoints(sket->num, root->C, sket->actionSequence);
-  banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
+  // take the bandit process of the sket node. If it is null, initialize it first
+  if(!sket->banditProcess) {
+    sket->initBanditProcess();
+  }
+  banditProcess = make_unique<BanditProcess>(*sket->banditProcess);
 }
 
 void rai::LGPComp2_Waypoints::untimedCompute() {

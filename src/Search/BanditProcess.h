@@ -34,6 +34,12 @@ struct BanditProcess {
         explicit BanditProcess(Array<MarkovChain>&& chains)
             : opt(), beta(opt.beta), sigma(0.01), markovChains(std::move(chains)), empty(markovChains.N == 0) {}
 
+        // Copy constructor
+        BanditProcess(const BanditProcess& other)
+            : opt(other.opt), beta(other.beta), sigma(other.sigma), 
+              markovChains(other.markovChains), empty(other.empty),
+              taskPlan(other.taskPlan), nodeType(other.nodeType) {}
+
         virtual ~BanditProcess() = default;
         
         // Returns pair of (stopping_time, gittins_index)

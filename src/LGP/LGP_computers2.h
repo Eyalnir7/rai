@@ -96,8 +96,9 @@ struct LGPComp2_Skeleton : GittinsNode {
   virtual void untimedCompute();
   virtual rai::NodeType getNodeType() override { return rai::NodeType::Skeleton; }
   virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(actionSequence); }
+  virtual void initBanditProcess() override;
 
-  virtual int getNumDecisions() { return -1.; }
+  virtual int getNumDecisions() { return (root->info->solver == "GITTINS") ? 100 : -1; }
 //    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
 //    virtual double effortHeuristic(){ return 10.+10.; }
   virtual double branchingPenalty_child(int i);

@@ -378,6 +378,11 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
     torch::Tensor& feas_quantiles_tensor,
     torch::Tensor& infeas_quantiles_tensor) {
     
+    // Squeeze tensors to remove batch dimension if present
+    feasibility = feasibility.squeeze();
+    feas_quantiles_tensor = feas_quantiles_tensor.squeeze();
+    infeas_quantiles_tensor = infeas_quantiles_tensor.squeeze();
+    
     // Convert feasibility tensor (size 1) to double
     double avgFeas = feasibility.item<double>();
     
@@ -403,9 +408,31 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
 }
 
 Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
+    // std::cout << "\n=== GNN_predict_waypoints_chains ===" << std::endl;
+    
     torch::Tensor feasibility = model_feasibility_waypoints->predict(C, taskPlan);
     torch::Tensor feas_quantiles = model_qr_feas_waypoints->predict(C, taskPlan);
     torch::Tensor infeas_quantiles = model_qr_infeas_waypoints->predict(C, taskPlan);
+    
+    // Apply sigmoid to feasibility
+    feasibility = torch::sigmoid(feasibility);
+    
+    // Apply softplus to quantiles (except first entry)
+    feas_quantiles = feas_quantiles.squeeze();
+    infeas_quantiles = infeas_quantiles.squeeze();
+    if (feas_quantiles.size(0) > 1) {
+        feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    if (infeas_quantiles.size(0) > 1) {
+        infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    
+    // std::cout << "Waypoints predictions:" << std::endl;
+    // std::cout << "  feasibility shape: " << feasibility.sizes() << ", value: " << feasibility << std::endl;
+    // std::cout << "  feas_quantiles shape: " << feas_quantiles.sizes() << ", values: " << feas_quantiles << std::endl;
+    // std::cout << "  infeas_quantiles shape: " << infeas_quantiles.sizes() << ", values: " << infeas_quantiles << std::endl;
 
     Array<MarkovChain> result;
     result.append(convert_tensors_to_markov_chain(feasibility, feas_quantiles, infeas_quantiles));
@@ -413,6 +440,15 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     Array<MarkovChain> rrtChains;;
     for(int i = 0; i < planLength; ++i) {
         torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i);
+        rrt_feas_quantiles = rrt_feas_quantiles.squeeze();  // Remove batch dimension
+        
+        // Apply softplus to all entries except the first
+        if (rrt_feas_quantiles.size(0) > 1) {
+            rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+                torch::nn::functional::softplus(rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
+        }
+        
+        // std::cout << "RRT action " << i << " feas_quantiles shape: " << rrt_feas_quantiles.sizes() << ", values: " << rrt_feas_quantiles << std::endl;
         std::vector<int> feas_quantiles_vec;
         auto feas_accessor = rrt_feas_quantiles.accessor<float, 1>();
         for (int i = 0; i < feas_accessor.size(0); ++i) {
@@ -424,7 +460,29 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan);
     torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan);
     torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan);
+    
+    // Apply sigmoid to feasibility
+    lgp_feasibility = torch::sigmoid(lgp_feasibility);
+    
+    // Apply softplus to quantiles (except first entry)
+    lgp_feas_quantiles = lgp_feas_quantiles.squeeze();
+    lgp_infeas_quantiles = lgp_infeas_quantiles.squeeze();
+    if (lgp_feas_quantiles.size(0) > 1) {
+        lgp_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(lgp_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    if (lgp_infeas_quantiles.size(0) > 1) {
+        lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    
+    // std::cout << "LGP predictions:" << std::endl;
+    // std::cout << "  feasibility shape: " << lgp_feasibility.sizes() << ", value: " << lgp_feasibility << std::endl;
+    // std::cout << "  feas_quantiles shape: " << lgp_feas_quantiles.sizes() << ", values: " << lgp_feas_quantiles << std::endl;
+    // std::cout << "  infeas_quantiles shape: " << lgp_infeas_quantiles.sizes() << ", values: " << lgp_infeas_quantiles << std::endl;
+    
     result.append(convert_tensors_to_markov_chain(lgp_feasibility, lgp_feas_quantiles, lgp_infeas_quantiles));
+    // std::cout << "=== End GNN_predict_waypoints_chains ===\n" << std::endl;
     return result;
 }
 
@@ -441,6 +499,21 @@ Array<MarkovChain> NodePredictor::GNN_predict_lgp_chains(Configuration& C, Strin
     torch::Tensor feasibility = model_feasibility_lgp->predict(C, taskPlan);
     torch::Tensor feas_quantiles_tensor = model_qr_feas_lgp->predict(C, taskPlan);
     torch::Tensor infeas_quantiles_tensor = model_qr_infeas_lgp->predict(C, taskPlan);
+    
+    // Apply sigmoid to feasibility
+    feasibility = torch::sigmoid(feasibility);
+    
+    // Apply softplus to quantiles (except first entry)
+    feas_quantiles_tensor = feas_quantiles_tensor.squeeze();
+    infeas_quantiles_tensor = infeas_quantiles_tensor.squeeze();
+    if (feas_quantiles_tensor.size(0) > 1) {
+        feas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(feas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    if (infeas_quantiles_tensor.size(0) > 1) {
+        infeas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
+            torch::nn::functional::softplus(infeas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
     
     // Convert tensors to MarkovChain
     MarkovChain mc = convert_tensors_to_markov_chain(feasibility, feas_quantiles_tensor, infeas_quantiles_tensor);

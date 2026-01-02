@@ -122,8 +122,11 @@ void rai::AStar::step(bool fol) {
 
   bool becameComplete = (!wasComplete && node->isComplete);
   if(becameComplete && !fol && opt.verbose>=1){
-    printFrontier();
-    std::cout <<" node '" <<*node <<"' became complete and feas: "<< node->isFeasible <<std::endl;
+    // printFrontier();
+    // convert node to GittinsNode to access taskPlan
+    if(auto gittinsNode = dynamic_cast<GittinsNode*>(node)){
+      std::cout <<" node '" <<*gittinsNode <<"' became complete and feas: "<< gittinsNode->isFeasible << " after: " << gittinsNode->c <<std::endl;
+    }
   }
 
 }

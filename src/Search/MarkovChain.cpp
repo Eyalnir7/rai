@@ -169,12 +169,24 @@ void MarkovChain::normalize_inputs() {
     assert(done_transitions_.size() == done_times_.size());
     assert(fail_transitions_.size() == fail_times_.size());
 
+    bool assert_passed = true;
+    // cout << "Normalized MarkovChain inputs:" << std::endl;
     for (double p : done_transitions_) {
-        assert(p >= 0.0 && p <= 1.0);
+        if(p < 0.0 || p > 1.0) {
+            assert_passed = false;
+        }
+        // cout << p << " ";
     }
+    // cout << std::endl;
+    // cout << "normalized fail transitions:" << std::endl;
     for (double p : fail_transitions_) {
-        assert(p >= 0.0 && p <= 1.0);
+        if(p < 0.0 || p > 1.0) {
+            assert_passed = false;
+        }
+        // cout << p << " ";
     }
+    // cout << std::endl;
+    assert(assert_passed);
 }
 
 double MarkovChain::get_gittins_numerator_loop(double next_layer_numerator) const {
