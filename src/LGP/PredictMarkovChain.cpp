@@ -122,6 +122,28 @@ MarkovChain get_markov_chain_from_quantiles(
     const std::vector<double>& quantile_levels,
     double avgFeas
 ) {
+    std::cout << "average feasibility: " << avgFeas << std::endl;
+    //print the inputs
+    std::cout << "Feasible Quantiles: [";
+    for (size_t i = 0; i < feas_quantiles.size(); ++i) {
+        std::cout << feas_quantiles[i];
+        if (i < feas_quantiles.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Infeasible Quantiles: [";
+    for (size_t i = 0; i < infeas_quantiles.size(); ++i) {
+        std::cout << infeas_quantiles[i];
+        if (i < infeas_quantiles.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Quantile Levels: [";
+    for (size_t i = 0; i < quantile_levels.size(); ++i) {
+        std::cout << quantile_levels[i];
+        if (i < quantile_levels.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+
+
     // Get unique sorted quantiles from both arrays
     std::set<int> quantiles_set;
     for (int q : feas_quantiles) {
@@ -198,17 +220,55 @@ MarkovChain get_markov_chain_from_quantiles(
     
     // Add remaining probability to last fail transition
     if (!fail_trans.empty()) {
-        if(in_feas_quantile[unique_quantiles.size()-1]){
-            fail_trans.push_back((1.0 - current_done_transition - current_fail_transition));
+        if(in_feas_quantile[unique_quantiles.size()-1] && !in_infeas_quantile[unique_quantiles.size()-1]){
+            fail_trans.push_back((1.0 - done_trans.back()));
             unique_infeas_quantiles.push_back(unique_quantiles[unique_quantiles.size()-1]);
         }
-        else{
-            fail_trans.back() += (1.0 - current_done_transition - current_fail_transition);
+        else if(!in_feas_quantile[unique_quantiles.size()-1] && in_infeas_quantile[unique_quantiles.size()-1]){
+            fail_trans.back() = 1;
         }
+        else if(in_feas_quantile[unique_quantiles.size()-1] && in_infeas_quantile[unique_quantiles.size()-1]){
+          fail_trans.back() = 1-done_trans.back();
+        }
+    }
+    else{
+      done_trans.back() = 1;
     }
     
     // Construct and return MarkovChain
-    return MarkovChain(done_trans, unique_feas_quantiles, fail_trans, unique_infeas_quantiles, BanditType::LINE);
+    std::cout << "=============================================================================== Constructed MarkovChain =============================================================================== " << endl;
+    
+    cout << "done_transitions_: [";
+    for (size_t i = 0; i < done_trans.size(); ++i) {
+        cout << done_trans[i];
+        if (i < done_trans.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "done_times_: [";
+    for (size_t i = 0; i < unique_feas_quantiles.size(); ++i) {
+        cout << unique_feas_quantiles[i];
+        if (i < unique_feas_quantiles.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "fail_transitions_: [";
+    for (size_t i = 0; i < fail_trans.size(); ++i) {
+        cout << fail_trans[i];
+        if (i < fail_trans.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "fail_times_: [";
+    for (size_t i = 0; i < unique_infeas_quantiles.size(); ++i) {
+        cout << unique_infeas_quantiles[i];
+        if (i < unique_infeas_quantiles.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "========================================" << std::endl;
+    auto mc = MarkovChain(done_trans, unique_feas_quantiles, fail_trans, unique_infeas_quantiles, BanditType::LINE);
+    return mc;
 }
 
 //===========================================================================

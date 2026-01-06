@@ -28,6 +28,27 @@ void get_markov_chain_from_quantiles(
     const std::vector<double>& quantile_levels,
     double avgFeas
 ) {
+    //print the inputs
+    std::cout << "Feasible Quantiles: [";
+    for (size_t i = 0; i < feas_quantiles.size(); ++i) {
+        std::cout << feas_quantiles[i];
+        if (i < feas_quantiles.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Infeasible Quantiles: [";
+    for (size_t i = 0; i < infeas_quantiles.size(); ++i) {
+        std::cout << infeas_quantiles[i];
+        if (i < infeas_quantiles.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Quantile Levels: [";
+    for (size_t i = 0; i < quantile_levels.size(); ++i) {
+        std::cout << quantile_levels[i];
+        if (i < quantile_levels.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+
+    
     // Get unique sorted quantiles from both arrays
     std::set<int> quantiles_set;
     for (int q : feas_quantiles) {
@@ -104,52 +125,63 @@ void get_markov_chain_from_quantiles(
     
     // Add remaining probability to last fail transition
     if (!fail_trans.empty()) {
-        if(in_feas_quantile[unique_quantiles.size()-1]){
-            fail_trans.push_back((1.0 - current_done_transition - current_fail_transition));
+        if(in_feas_quantile[unique_quantiles.size()-1] && !in_infeas_quantile[unique_quantiles.size()-1]){
+            fail_trans.push_back((1.0 - done_trans.back()));
             unique_infeas_quantiles.push_back(unique_quantiles[unique_quantiles.size()-1]);
         }
-        else{
-            fail_trans.back() += (1.0 - current_done_transition - current_fail_transition);
+        else if(!in_feas_quantile[unique_quantiles.size()-1] && in_infeas_quantile[unique_quantiles.size()-1]){
+            fail_trans.back() = 1;
+        }
+        else if(in_feas_quantile[unique_quantiles.size()-1] && in_infeas_quantile[unique_quantiles.size()-1]){
+          fail_trans.back() = 1-done_trans.back();
         }
     }
+    else{
+      done_trans.back() = 1;
+    }
     
-    // Print the output
-    std::cout << "  done_trans: [";
+    // Construct and return MarkovChain
+    std::cout << "=============================================================================== Constructed MarkovChain =============================================================================== " << std::endl;
+    
+    std::cout << "done_transitions_: [";
     for (size_t i = 0; i < done_trans.size(); ++i) {
         std::cout << done_trans[i];
         if (i < done_trans.size() - 1) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "]" << std::endl;
     
-    std::cout << "  done_times: [";
+    std::cout << "done_times_: [";
     for (size_t i = 0; i < unique_feas_quantiles.size(); ++i) {
         std::cout << unique_feas_quantiles[i];
         if (i < unique_feas_quantiles.size() - 1) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "]" << std::endl;
     
-    std::cout << "  fail_trans: [";
+    std::cout << "fail_transitions_: [";
     for (size_t i = 0; i < fail_trans.size(); ++i) {
         std::cout << fail_trans[i];
         if (i < fail_trans.size() - 1) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "]" << std::endl;
     
-    std::cout << "  fail_times: [";
+    std::cout << "fail_times_: [";
     for (size_t i = 0; i < unique_infeas_quantiles.size(); ++i) {
         std::cout << unique_infeas_quantiles[i];
         if (i < unique_infeas_quantiles.size() - 1) std::cout << ", ";
     }
-    std::cout << "]\n\n";
+    std::cout << "]" << std::endl;
+    
+    std::cout << "========================================" << std::endl;
+    return;
 }
 
 int main() {
     // Test case 1: Simple example
     std::cout << "Test 1: Basic quantiles\n";
-    std::vector<int> feas1 = {10, 20};
-    std::vector<int> infeas1 = {0, 15};
-    std::vector<double> levels1 = {0.5, 0.9};
-    double avgFeas1 = 0.5;
+    std::vector<int> feas1 = {69, 38, 36, 46, 92};
+    std::vector<int> infeas1 = {134, 59, 60, 99, 206};
+    std::vector<double> levels1 = {0.100, 0.300, 0.500, 0.700, 0.900};
+    double avgFeas1 = 0.948;
     get_markov_chain_from_quantiles(feas1, infeas1, levels1, avgFeas1);
     
     return 0;

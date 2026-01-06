@@ -53,6 +53,9 @@ public:
         double next_layer_numerator = 1.0 / (1.0 - beta),
         double next_layer_aux = 0.0) const;
 
+    // Debug helper
+    void print_arrays() const;
+
 private:
     std::vector<double> done_transitions_;
     std::vector<int> done_times_;

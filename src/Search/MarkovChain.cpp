@@ -130,6 +130,47 @@ std::vector<int> MarkovChain::compute_all_times(const std::vector<int>& done_tim
     return all;
 }
 
+void MarkovChain::print_arrays() const {
+    cout << "========== MarkovChain Arrays ==========" << std::endl;
+    cout << "Type: " << (type_ == BanditType::LOOP ? "LOOP" : "LINE") << std::endl;
+    
+    cout << "done_transitions_: [";
+    for (size_t i = 0; i < done_transitions_.size(); ++i) {
+        cout << done_transitions_[i];
+        if (i < done_transitions_.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "done_times_: [";
+    for (size_t i = 0; i < done_times_.size(); ++i) {
+        cout << done_times_[i];
+        if (i < done_times_.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "fail_transitions_: [";
+    for (size_t i = 0; i < fail_transitions_.size(); ++i) {
+        cout << fail_transitions_[i];
+        if (i < fail_transitions_.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "fail_times_: [";
+    for (size_t i = 0; i < fail_times_.size(); ++i) {
+        cout << fail_times_[i];
+        if (i < fail_times_.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    
+    cout << "all_times_: [";
+    for (size_t i = 0; i < all_times_.size(); ++i) {
+        cout << all_times_[i];
+        if (i < all_times_.size() - 1) cout << ", ";
+    }
+    cout << "]" << std::endl;
+    cout << "========================================" << std::endl;
+}
+
 void MarkovChain::normalize_inputs() {
     auto has_zero = [](const std::vector<int>& v) {
         return std::find(v.begin(), v.end(), 0) != v.end();
@@ -158,16 +199,27 @@ void MarkovChain::normalize_inputs() {
         const double last_done_prob = done_transitions_.empty() ? 0.0 : done_transitions_.back();
         fail_transitions_.push_back(1.0 - last_done_prob);
     } else { // last_fail_time > last_done_time
-        if (!fail_transitions_.empty()) {
-            fail_transitions_.back() = 1.0;
-        }
+        fail_transitions_.back() = 1.0;
     }
 
     all_times_ = compute_all_times(done_times_, fail_times_);
 
     // Assertions equivalent to your Python asserts
-    assert(done_transitions_.size() == done_times_.size());
-    assert(fail_transitions_.size() == fail_times_.size());
+    if (done_transitions_.size() != done_times_.size()) {
+        cout << "MarkovChain assertion failed: done_transitions_.size() (" 
+             << done_transitions_.size() << ") != done_times_.size() (" 
+             << done_times_.size() << ")" << std::endl;
+        print_arrays();
+        assert(false);
+    }
+    
+    if (fail_transitions_.size() != fail_times_.size()) {
+        cout << "MarkovChain assertion failed: fail_transitions_.size() (" 
+             << fail_transitions_.size() << ") != fail_times_.size() (" 
+             << fail_times_.size() << ")" << std::endl;
+        print_arrays();
+        assert(false);
+    }
 
     bool assert_passed = true;
     for (double p : done_transitions_) {
@@ -182,19 +234,10 @@ void MarkovChain::normalize_inputs() {
     }
     
     if(!assert_passed) {
-        cout << "MarkovChain assertion failed! Transitions out of range [0, 1]:" << std::endl;
-        cout << "Done transitions: ";
-        for (double p : done_transitions_) {
-            cout << p << " ";
-        }
-        cout << std::endl;
-        cout << "Fail transitions: ";
-        for (double p : fail_transitions_) {
-            cout << p << " ";
-        }
-        cout << std::endl;
+        cout << "MarkovChain assertion failed! Transitions out of range [0, 1]" << std::endl;
+        print_arrays();
+        assert(false);
     }
-    assert(assert_passed);
 }
 
 double MarkovChain::get_gittins_numerator_loop(double next_layer_numerator) const {

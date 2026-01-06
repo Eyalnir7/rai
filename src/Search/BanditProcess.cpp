@@ -28,6 +28,8 @@ std::pair<int, double> BanditProcess::compute_gittins_index(double state) const 
     // i = last .. 0
     for (int i = static_cast<int>(markovChains.N) - 1; i >= 0; --i) {
         const MarkovChain& chain = markovChains(i);
+        cout << "Computing Gittins index for chain " << i << " with state " << state << endl;
+        chain.print_arrays();
 
         // Python:
         // chain_state = self.state if i == 0 else 0
