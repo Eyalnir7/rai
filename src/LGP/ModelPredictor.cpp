@@ -7,6 +7,12 @@ ModelPredictor::ModelPredictor(const std::string& model_path, torch::Device devi
     try {
         module_ = torch::jit::load(model_path);
         module_.to(device_);
+        module_.eval();  // Set to evaluation mode
+        
+        // Disable gradient tracking and profiling to prevent memory accumulation
+        torch::jit::getProfilingMode() = false;
+        torch::jit::getExecutorMode() = false;
+        
         model_loaded_ = true;
         std::cout << "Model loaded successfully from: " << model_path << std::endl;
         std::cout << "Using device: " << (device_.is_cpu() ? "CPU" : "CUDA") << std::endl;
@@ -22,25 +28,44 @@ ModelPredictor::ModelPredictor(const std::string& model_path, torch::Device devi
     }
 }
 
+ModelPredictor::~ModelPredictor() {
+    // Clear any cached execution plans
+    if (model_loaded_) {
+        // Force cleanup of internal caches
+        module_ = torch::jit::Module();
+    }
+}
+
 torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& task_plan, int action_num) {
     if (!model_loaded_) {
         std::cerr << "Model is not loaded. Cannot make predictions." << std::endl;
         return torch::Tensor();
     }
     
-    // Convert configuration and task plan to intermediate heterogeneous data
-    IntermediateHeteroData hetero_data = get_hetero_data_input(C, task_plan, device_, action_num);
-    
-    // Convert to HeteroGraph
-    HeteroGraph g = convertToHeteroGraph(hetero_data);
-    
-    // Run the model
-    torch::Tensor output = runModelForward(g);
+    torch::Tensor output;
+    {
+        // Use NoGradGuard to prevent gradient tracking
+        torch::NoGradGuard no_grad;
+        
+        // Convert configuration and task plan to intermediate heterogeneous data
+        IntermediateHeteroData hetero_data = get_hetero_data_input(C, task_plan, device_, action_num);
+        
+        // Convert to HeteroGraph
+        HeteroGraph g = convertToHeteroGraph(hetero_data);
+        
+        // Run the model
+        output = runModelForward(g);
+        
+        // Clone and detach to fully break from any computation graph
+        output = output.clone().detach();
+    }
     
     return output;
 }
 
 void ModelPredictor::warmUp() {
+    torch::NoGradGuard no_grad;
+    
     // Create dummy inputs with typical sizes
     torch::Dict<std::string, torch::Tensor> x_dict, times_dict, batch_dict, edge_index_dict;
     
@@ -77,7 +102,7 @@ void ModelPredictor::warmUp() {
     
     // Run a few warm-up passes to trigger JIT compilation
     for (int i = 0; i < 3; i++) {
-        module_.forward(inputs);
+        auto output = module_.forward(inputs);
     }
 }
 
@@ -110,7 +135,10 @@ torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     torch::IValue output = module_.forward(inputs);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
+    if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     
-    return output.toTensor();
+    // Clone and detach to prevent accumulation
+    torch::Tensor result = output.toTensor().clone().detach();
+    
+    return result;
 }

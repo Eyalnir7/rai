@@ -37,6 +37,7 @@ struct AStar {
   AStar(const std::shared_ptr<TreeSearchNode>& _root, SearchMode _mode = astar);
 
   void step(bool fol=true);
+  void stepGittins();  // Specialized step for GITTINS solver with batched skeleton expansion
   void stepAStar();
   bool run(int stepsLimit=-1);
   void report();
@@ -46,6 +47,10 @@ struct AStar {
 
 private:
   void addToQueue(TreeSearchNode *node);
+  
+  // GITTINS-specific state for batched skeleton expansion
+  uint gittins_maxSkeletons = 10;  // Current batch limit
+  std::set<TreeSearchNode*> gittins_triedSkeletons;  // Which skeletons have been tried
 };
 
 } //namespace

@@ -122,26 +122,29 @@ MarkovChain get_markov_chain_from_quantiles(
     const std::vector<double>& quantile_levels,
     double avgFeas
 ) {
-    std::cout << "average feasibility: " << avgFeas << std::endl;
-    //print the inputs
-    std::cout << "Feasible Quantiles: [";
-    for (size_t i = 0; i < feas_quantiles.size(); ++i) {
-        std::cout << feas_quantiles[i];
-        if (i < feas_quantiles.size() - 1) std::cout << ", ";
+    int verbose = rai::getParameter<int>("GNN/verbose", 0);
+    if(verbose > 1){
+      std::cout << "average feasibility: " << avgFeas << std::endl;
+      //print the inputs
+      std::cout << "Feasible Quantiles: [";
+      for (size_t i = 0; i < feas_quantiles.size(); ++i) {
+          std::cout << feas_quantiles[i];
+          if (i < feas_quantiles.size() - 1) std::cout << ", ";
+      }
+      std::cout << "]" << std::endl;
+      std::cout << "Infeasible Quantiles: [";
+      for (size_t i = 0; i < infeas_quantiles.size(); ++i) {
+          std::cout << infeas_quantiles[i];
+          if (i < infeas_quantiles.size() - 1) std::cout << ", ";
+      }
+      std::cout << "]" << std::endl;
+      std::cout << "Quantile Levels: [";
+      for (size_t i = 0; i < quantile_levels.size(); ++i) {
+          std::cout << quantile_levels[i];
+          if (i < quantile_levels.size() - 1) std::cout << ", ";
+      }
+      std::cout << "]" << std::endl;
     }
-    std::cout << "]" << std::endl;
-    std::cout << "Infeasible Quantiles: [";
-    for (size_t i = 0; i < infeas_quantiles.size(); ++i) {
-        std::cout << infeas_quantiles[i];
-        if (i < infeas_quantiles.size() - 1) std::cout << ", ";
-    }
-    std::cout << "]" << std::endl;
-    std::cout << "Quantile Levels: [";
-    for (size_t i = 0; i < quantile_levels.size(); ++i) {
-        std::cout << quantile_levels[i];
-        if (i < quantile_levels.size() - 1) std::cout << ", ";
-    }
-    std::cout << "]" << std::endl;
 
 
     // Get unique sorted quantiles from both arrays
@@ -190,6 +193,7 @@ MarkovChain get_markov_chain_from_quantiles(
             }
             double qi = quantile_levels[done_index];
             current_done_transition = (avgFeas * qi - sum_done) / next_transition;
+            current_done_transition = std::max(0.0, std::min(1.0, current_done_transition));
             sum_done += current_done_transition;
             done_index++;
             done_trans.push_back(current_done_transition);
@@ -202,6 +206,7 @@ MarkovChain get_markov_chain_from_quantiles(
             }
             double qi = quantile_levels[fail_index];
             current_fail_transition = ((1.0 - avgFeas) * qi - sum_fail) / next_transition;
+            current_fail_transition = std::max(0.0, std::min(1.0, current_fail_transition));
             sum_fail += current_fail_transition;
             fail_index++;
             fail_trans.push_back(current_fail_transition);
@@ -236,37 +241,39 @@ MarkovChain get_markov_chain_from_quantiles(
     }
     
     // Construct and return MarkovChain
-    std::cout << "=============================================================================== Constructed MarkovChain =============================================================================== " << endl;
-    
-    cout << "done_transitions_: [";
-    for (size_t i = 0; i < done_trans.size(); ++i) {
-        cout << done_trans[i];
-        if (i < done_trans.size() - 1) cout << ", ";
+    if(verbose > 1){
+      std::cout << "=============================================================================== Constructed MarkovChain =============================================================================== " << endl;
+      
+      cout << "done_transitions_: [";
+      for (size_t i = 0; i < done_trans.size(); ++i) {
+          cout << done_trans[i];
+          if (i < done_trans.size() - 1) cout << ", ";
+      }
+      cout << "]" << std::endl;
+      
+      cout << "done_times_: [";
+      for (size_t i = 0; i < unique_feas_quantiles.size(); ++i) {
+          cout << unique_feas_quantiles[i];
+          if (i < unique_feas_quantiles.size() - 1) cout << ", ";
+      }
+      cout << "]" << std::endl;
+      
+      cout << "fail_transitions_: [";
+      for (size_t i = 0; i < fail_trans.size(); ++i) {
+          cout << fail_trans[i];
+          if (i < fail_trans.size() - 1) cout << ", ";
+      }
+      cout << "]" << std::endl;
+      
+      cout << "fail_times_: [";
+      for (size_t i = 0; i < unique_infeas_quantiles.size(); ++i) {
+          cout << unique_infeas_quantiles[i];
+          if (i < unique_infeas_quantiles.size() - 1) cout << ", ";
+      }
+      cout << "]" << std::endl;
+      
+      cout << "========================================" << std::endl;
     }
-    cout << "]" << std::endl;
-    
-    cout << "done_times_: [";
-    for (size_t i = 0; i < unique_feas_quantiles.size(); ++i) {
-        cout << unique_feas_quantiles[i];
-        if (i < unique_feas_quantiles.size() - 1) cout << ", ";
-    }
-    cout << "]" << std::endl;
-    
-    cout << "fail_transitions_: [";
-    for (size_t i = 0; i < fail_trans.size(); ++i) {
-        cout << fail_trans[i];
-        if (i < fail_trans.size() - 1) cout << ", ";
-    }
-    cout << "]" << std::endl;
-    
-    cout << "fail_times_: [";
-    for (size_t i = 0; i < unique_infeas_quantiles.size(); ++i) {
-        cout << unique_infeas_quantiles[i];
-        if (i < unique_infeas_quantiles.size() - 1) cout << ", ";
-    }
-    cout << "]" << std::endl;
-    
-    cout << "========================================" << std::endl;
     auto mc = MarkovChain(done_trans, unique_feas_quantiles, fail_trans, unique_infeas_quantiles, BanditType::LINE);
     return mc;
 }
@@ -470,9 +477,11 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
 Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
     // std::cout << "\n=== GNN_predict_waypoints_chains ===" << std::endl;
     
-    torch::Tensor feasibility = model_feasibility_waypoints->predict(C, taskPlan);
-    torch::Tensor feas_quantiles = model_qr_feas_waypoints->predict(C, taskPlan);
-    torch::Tensor infeas_quantiles = model_qr_infeas_waypoints->predict(C, taskPlan);
+    torch::NoGradGuard no_grad;
+    
+    torch::Tensor feasibility = model_feasibility_waypoints->predict(C, taskPlan).detach();
+    torch::Tensor feas_quantiles = model_qr_feas_waypoints->predict(C, taskPlan).detach();
+    torch::Tensor infeas_quantiles = model_qr_infeas_waypoints->predict(C, taskPlan).detach();
     
     // Apply sigmoid to feasibility
     feasibility = torch::sigmoid(feasibility);
@@ -499,7 +508,7 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     int planLength = taskPlan.N;
     Array<MarkovChain> rrtChains;;
     for(int i = 0; i < planLength; ++i) {
-        torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i);
+        torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i).detach();
         rrt_feas_quantiles = rrt_feas_quantiles.squeeze();  // Remove batch dimension
         
         // Apply softplus to all entries except the first
@@ -518,9 +527,9 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0);
         result.append(rrtWaypointsMC);
     }
-    torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan);
-    torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan);
-    torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan);
+    torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan).detach();
+    torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan).detach();
+    torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan).detach();
     
     // Apply sigmoid to feasibility
     lgp_feasibility = torch::sigmoid(lgp_feasibility);
@@ -557,9 +566,11 @@ Array<MarkovChain> NodePredictor::GNN_predict_rrt_chains(Configuration& C, Strin
 
 Array<MarkovChain> NodePredictor::GNN_predict_lgp_chains(Configuration& C, StringAA taskPlan){
     // Use model_feasibility_lgp, model_qr_feas_lgp, and model_qr_infeas_lgp
-    torch::Tensor feasibility = model_feasibility_lgp->predict(C, taskPlan);
-    torch::Tensor feas_quantiles_tensor = model_qr_feas_lgp->predict(C, taskPlan);
-    torch::Tensor infeas_quantiles_tensor = model_qr_infeas_lgp->predict(C, taskPlan);
+    torch::NoGradGuard no_grad;
+    
+    torch::Tensor feasibility = model_feasibility_lgp->predict(C, taskPlan).detach();
+    torch::Tensor feas_quantiles_tensor = model_qr_feas_lgp->predict(C, taskPlan).detach();
+    torch::Tensor infeas_quantiles_tensor = model_qr_infeas_lgp->predict(C, taskPlan).detach();
     
     // Apply sigmoid to feasibility
     feasibility = torch::sigmoid(feasibility);

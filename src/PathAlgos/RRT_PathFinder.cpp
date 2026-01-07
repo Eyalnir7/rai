@@ -295,9 +295,14 @@ void RRT_PathFinder::report(){
 int RRT_PathFinder::stepConnect() {
   iters++;
   if(iters>(uint)opt.maxIters) return -1;
-
+  if(opt.verbose>0) cout << "growing tree growTreeToTree 0->T, iters=" << iters << endl;
   bool success = growTreeToTree(*rrt0, *rrtT);
-  if(!success) success = growTreeToTree(*rrtT, *rrt0);
+  if(opt.verbose>0) cout << "grown tree growTreeToTree, success=" << success << endl;
+  if(!success) {
+    if(opt.verbose>0) cout << "growing tree growTreeToTree T->0, iters=" << iters << endl;
+    success = growTreeToTree(*rrtT, *rrt0);
+    if(opt.verbose>0) cout << "grown tree growTreeToTree, success=" << success << endl;
+  }
 
   //animation display
   if(opt.verbose>2) {
@@ -325,11 +330,13 @@ int RRT_PathFinder::stepConnect() {
 //      std::cout <<"  sideSteps: " <<(100.*n_sideStepGood/n_sideStep) <<"%/" <<n_sideStep;
 //      std::cout <<std::endl;
     }
-
+    if(opt.verbose>0) cout << "extracting path" << endl;
     path = rrt0->getPathFromNode(rrt0->nearestID);
+    if(opt.verbose>0) cout << "getPathFromNode done" << endl;
     arr pathT = rrtT->getPathFromNode(rrtT->nearestID);
-
+    if(opt.verbose>0) cout << "revertPath" << endl;
     revertPath(path);
+    if(opt.verbose>0) cout << "revertPath done" << endl;
     path.append(pathT);
 
     //display

@@ -31,7 +31,11 @@ public:
      * @param model_path Path to the scripted PyTorch model (.pt file)
      * @param device Torch device to use (default: CPU)
      */
-    ModelPredictor(const std::string& model_path, torch::Device device = torch::kCPU);
+    ModelPredictor(const std::string& model_path, torch::Device device = torch::kCPU);    
+    /**
+     * @brief Destructor - cleans up model resources
+     */
+    ~ModelPredictor();
     
     /**
      * @brief Run prediction on a configuration and task plan
