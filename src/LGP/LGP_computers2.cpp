@@ -23,6 +23,8 @@ rai::LGPComp2_root::
   name <<"LGPComp2_root#0";
   info = make_shared<LGP2_GlobalInfo>();
   isComplete = true;
+  cout << "info->numWaypoints: " << info->numWaypoints << endl;
+  cout << "info->numTaskPlans: " << info->numTaskPlans << endl;
   
   // Use provided predictor or initialize new one
   if (_predictor) {

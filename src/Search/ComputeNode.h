@@ -18,7 +18,7 @@ namespace rai {
     RAI_PARAM("LGP/", int, verbose, 1)
     RAI_PARAM("LGP/", double, level_c0, 1.)
     RAI_PARAM("LGP/", double, level_cP, 1.)
-    RAI_PARAM("LGP/", double, level_w0, 10.)
+    RAI_PARAM("LGP/", double, level_w0, 1.)
     RAI_PARAM("LGP/", double, level_wP, 2.)
     RAI_PARAM("LGP/", double, level_eps, 0.)
     RAI_PARAM("LGP/", rai::String, node_type, "ELS") // ELS or Gittins

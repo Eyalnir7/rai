@@ -41,6 +41,8 @@ torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& tas
         std::cerr << "Model is not loaded. Cannot make predictions." << std::endl;
         return torch::Tensor();
     }
+
+    c10::InferenceMode guard;
     
     torch::Tensor output;
     {
@@ -57,7 +59,7 @@ torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& tas
         output = runModelForward(g);
         
         // Clone and detach to fully break from any computation graph
-        output = output.clone().detach();
+        output = output;
     }
     
     return output;
@@ -138,7 +140,7 @@ torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     
     // Clone and detach to prevent accumulation
-    torch::Tensor result = output.toTensor().clone().detach();
+    torch::Tensor result = output.toTensor();
     
     return result;
 }
