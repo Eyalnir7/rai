@@ -2,6 +2,7 @@
 #include "ModelPredictor.h"
 #include <Search/MarkovChain.h>
 #include <torch/torch.h>
+#include <random>
 
 namespace rai {
 
@@ -52,7 +53,13 @@ BanditProcess NodePredictor::predict_waypoints(int planID, Configuration& C, Str
     return GT_BP_Waypoints(planID);
   } else if(predictionType == "myopicGT") {
     return myopic_GT_BP_Waypoints(planID);
-  } else if(predictionType == "GNN") {
+  } else if(predictionType == "test"){
+        Array<MarkovChain> chains = test_predict_waypoints_chains(C, taskPlan);
+        BanditProcess bp(std::move(chains));
+        bp.nodeType = NodeType::WaypointsNode;
+        return bp;
+    }
+    else if(predictionType == "GNN") {
     Array<MarkovChain> chains = GNN_predict_waypoints_chains(C, taskPlan);
     BanditProcess bp(std::move(chains));
     bp.nodeType = NodeType::WaypointsNode;
@@ -472,6 +479,89 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
     
     // Get MarkovChain from quantiles
     return get_markov_chain_from_quantiles(feas_quantiles_vec, infeas_quantiles_vec, quantile_levels, avgFeas);
+}
+
+Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
+    // Generate random predictions similar to GNN structure
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> feas_dist(0.3, 0.9);  // Random feasibility between 0.3 and 0.9
+    std::uniform_int_distribution<> time_dist(5, 50);      // Random times between 5 and 50
+    
+    Array<MarkovChain> result;
+    
+    // 1. Generate waypoints chain
+    double waypoints_feas = feas_dist(gen);
+    std::vector<int> waypoints_feas_quantiles;
+    std::vector<int> waypoints_infeas_quantiles;
+    
+    // Generate 5 random sorted feasible quantiles
+    for(int i = 0; i < 5; ++i) {
+        waypoints_feas_quantiles.push_back(time_dist(gen) + i * 10);
+    }
+    std::sort(waypoints_feas_quantiles.begin(), waypoints_feas_quantiles.end());
+    
+    // Generate 5 random sorted infeasible quantiles
+    for(int i = 0; i < 5; ++i) {
+        waypoints_infeas_quantiles.push_back(time_dist(gen) + i * 10);
+    }
+    std::sort(waypoints_infeas_quantiles.begin(), waypoints_infeas_quantiles.end());
+    
+    MarkovChain waypoints_mc = get_markov_chain_from_quantiles(
+        waypoints_feas_quantiles, 
+        waypoints_infeas_quantiles, 
+        {0.1, 0.3, 0.5, 0.7, 0.9}, 
+        waypoints_feas
+    );
+    result.append(waypoints_mc);
+    
+    // 2. Generate RRT chains (one per action)
+    int planLength = taskPlan.N;
+    for(int i = 0; i < planLength; ++i) {
+        std::vector<int> rrt_feas_quantiles;
+        
+        // Generate 5 random sorted feasible quantiles for RRT
+        for(int j = 0; j < 5; ++j) {
+            rrt_feas_quantiles.push_back(time_dist(gen) + j * 8);
+        }
+        std::sort(rrt_feas_quantiles.begin(), rrt_feas_quantiles.end());
+        rrt_feas_quantiles.push_back(200);  // Add max time
+        
+        MarkovChain rrt_mc = get_markov_chain_from_quantiles(
+            rrt_feas_quantiles, 
+            {}, 
+            {0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 
+            1.0
+        );
+        result.append(rrt_mc);
+    }
+    
+    // 3. Generate LGP chain
+    double lgp_feas = feas_dist(gen);
+    std::vector<int> lgp_feas_quantiles;
+    std::vector<int> lgp_infeas_quantiles;
+    
+    // Generate 5 random sorted feasible quantiles
+    for(int i = 0; i < 5; ++i) {
+        lgp_feas_quantiles.push_back(time_dist(gen) + i * 15);
+    }
+    std::sort(lgp_feas_quantiles.begin(), lgp_feas_quantiles.end());
+    
+    // Generate 5 random sorted infeasible quantiles
+    for(int i = 0; i < 5; ++i) {
+        lgp_infeas_quantiles.push_back(time_dist(gen) + i * 15);
+    }
+    std::sort(lgp_infeas_quantiles.begin(), lgp_infeas_quantiles.end());
+    
+    MarkovChain lgp_mc = get_markov_chain_from_quantiles(
+        lgp_feas_quantiles, 
+        lgp_infeas_quantiles, 
+        {0.1, 0.3, 0.5, 0.7, 0.9}, 
+        lgp_feas
+    );
+    result.append(lgp_mc);
+    
+    return result;
 }
 
 Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan){

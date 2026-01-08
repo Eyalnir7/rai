@@ -50,6 +50,9 @@ private:
       torch::Tensor& feas_quantiles_tensor,
       torch::Tensor& infeas_quantiles_tensor);
   
+  // Test-based prediction method (generates random MarkovChains)
+  Array<MarkovChain> test_predict_waypoints_chains(Configuration& C, StringAA taskPlan);
+  
   // GNN-based prediction methods (private - return MarkovChain arrays)
   Array<MarkovChain> GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan);
   Array<MarkovChain> GNN_predict_rrt_chains(Configuration& C, StringAA taskPlan, int actionNum);
