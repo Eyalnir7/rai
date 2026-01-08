@@ -8,44 +8,43 @@
 
 #pragma once
 
-#include "TreeSearchNode.h"
+#include "../Search/GittinsNode.h"
 #include "../Algo/priorityQueue.h"
 
 //===========================================================================
 
 namespace rai {
 
-struct AStar_GlobalInfo {
+struct LGPComp2_root;
+
+struct GittinsSearch_GlobalInfo {
   RAI_PARAM("AStar/", int, verbose, 1)
+  RAI_PARAM("", int, numTaskPlans, 10)
 };
 
-struct AStar {
-  enum SearchMode { astar=0, treePolicy=1, FIFO=2, DataExtraction=3 };
+struct GittinsSearch {
 
-  AStar_GlobalInfo opt = AStar_GlobalInfo();
+  GittinsSearch_GlobalInfo opt = GittinsSearch_GlobalInfo();
 
-  typedef std::shared_ptr<TreeSearchNode> NodeP;
+  typedef std::shared_ptr<GittinsNode> NodeP;
   rai::Array<NodeP> mem;
-  NodeP root;
-  PriorityQueue<TreeSearchNode*> queue;
-  rai::Array<TreeSearchNode*> solutions;
+  std::shared_ptr<LGPComp2_root> root;
+  PriorityQueue<GittinsNode*> queue;
+  rai::Array<GittinsNode*> solutions;
   uint steps=0;
   int verbose=1;
   double currentLevel=0.;
-  SearchMode mode = astar;
 
-  AStar(const std::shared_ptr<TreeSearchNode>& _root, SearchMode _mode = astar);
+  GittinsSearch(const std::shared_ptr<LGPComp2_root>& _root);
 
-  void step(bool fol=true);
-  void stepAStar();
+  void step();
   bool run(int stepsLimit=-1);
   void report();
   void printFrontier() const;
 
-  TreeSearchNode* selectByTreePolicy();
-
 private:
-  void addToQueue(TreeSearchNode *node);
+  void addToQueue(GittinsNode *node);
+
 };
 
 } //namespace

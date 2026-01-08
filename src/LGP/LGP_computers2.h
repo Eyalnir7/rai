@@ -59,6 +59,7 @@ struct LGPComp2_root : GittinsNode {
   // std::shared_ptr<rai::AStar> fol_astar;
   std::shared_ptr<LGP2_GlobalInfo> info;
   bool fixedSkeleton=false;
+  int numSkeletonsTried=0;
   
   // NodePredictor manages all prediction logic (GT, myopicGT, GNN)
   std::shared_ptr<NodePredictor> predictor;
@@ -67,7 +68,8 @@ struct LGPComp2_root : GittinsNode {
 
   virtual rai::Configuration* getConfiguration() override { return &C; }
   virtual void untimedCompute() {}
-  virtual int getNumDecisions(){ return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
+  // virtual int getNumDecisions(){ return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
+    virtual int getNumDecisions(){ return -1; };
 //    virtual double effortHeuristic(){ return 11.+10.; }
   virtual double branchingPenalty_child(int i);
 
@@ -85,6 +87,7 @@ struct LGPComp2_Skeleton : GittinsNode {
   //shared_ptr<SkeletonSolver> sol;
   // StringA actionSequence;
   Array<StringA> actionSequence;
+  bool triedChild = false;
   // Array<Graph*> states;
   // arr times;
 

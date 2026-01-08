@@ -23,6 +23,16 @@ struct GittinsNode : rai::ComputeNode {
   virtual rai::TaskPlan getTaskPlan();
   virtual rai::NodeType getNodeType() { return rai::NodeType::Other; }
 
+  // Helper function to transition and cast to GittinsNode
+  std::shared_ptr<GittinsNode> transitionToGittinsNode(int action) {
+    return std::dynamic_pointer_cast<GittinsNode>(transition(action));
+  }
+
+  // Helper function to get parent as GittinsNode
+  GittinsNode* getGittinsParent() const {
+    return dynamic_cast<GittinsNode*>(parent);
+  }
+
   void compute() override;
   double computePriority() override;
 

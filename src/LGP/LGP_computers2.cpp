@@ -209,6 +209,10 @@ void rai::LGPComp2_Waypoints::initBanditProcess() {
 
 void rai::LGPComp2_Waypoints::untimedCompute() {
   LGPComp2_root* root=sket->root;
+  if(!sket->triedChild){
+    root->numSkeletonsTried++;
+    sket->triedChild = true;
+  }
 
   // Safety check: if already complete and komoWaypoints has been cleaned up, don't compute again
   if(isComplete && !komoWaypoints) {

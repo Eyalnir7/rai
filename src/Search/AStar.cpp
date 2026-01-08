@@ -13,7 +13,6 @@
 #include <typeinfo>
 #include "../Core/util.h"         // niceTypeidName(...)
 #include "Search/ComputeNode.h"          // for ComputeNode::c
-#include "../LGP/LGP_computers.h"
 #include "Search/GittinsNode.h" // for GittinsNode
 #include <Search/NodeTypes.h>
 
@@ -26,7 +25,6 @@ rai::AStar::AStar(const std::shared_ptr<rai::TreeSearchNode>& _root, SearchMode 
 
 void rai::AStar::step(bool fol) {
   steps++;
-
   //pop
   TreeSearchNode* node = 0;
   if(mode==astar || mode==FIFO){
@@ -37,12 +35,12 @@ void rai::AStar::step(bool fol) {
     // printFrontier();
     node = queue.pop();
     // downcast the node to a FOL_World_State object
-    if (opt.verbose >= 1){
-    if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
-      str debug;
-      folNode->getDecisionSequence(debug);
-      // cout << "Exploring node: " << debug << std::endl;
-    }}
+    // if (opt.verbose >= 1){
+    // if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
+    //   str debug;
+    //   folNode->getDecisionSequence(debug);
+    //   // cout << "Exploring node: " << debug << std::endl;
+    // }}
     // if(mode==astar){
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
     // }
@@ -228,100 +226,4 @@ rai::TreeSearchNode* rai::AStar::selectByTreePolicy(){
 void rai::AStar::addToQueue(TreeSearchNode *node){
   if(mode==FIFO) queue.append(node);
   else queue.add(node->f_prio, node, true);
-}
-
-void rai::AStar::stepGittins() {
-  steps++;
-
-  //pop from queue
-  if(!queue.N) {
-    LOG(-1) <<"AStar: queue is empty -> failure!";
-    return;
-  }
-  
-  TreeSearchNode* node = queue.pop();
-  currentLevel = node->f_prio;
-
-  //widen - with batching logic for skeleton nodes
-  TreeSearchNode *siblingToBeAdded = 0;
-  if(node->needsWidening){
-    CHECK(node->parent, "");
-    
-    // Check if parent is root and we need to enforce batching
-    bool canWiden = true;
-    if(auto lgpRoot = dynamic_cast<rai::LGPComp2_root*>(node->parent)) {
-      // Only allow widening if we haven't reached the batch limit
-      canWiden = (lgpRoot->children.N < gittins_maxSkeletons);
-    }
-    
-    if(canWiden) {
-      NodeP sibling = node->parent->transition(node->parent->children.N);
-      if(sibling){
-        CHECK_EQ(sibling->parent, node->parent, "")
-        CHECK_GE(sibling->f_prio, currentLevel, "sibling needs to have greater level")
-        sibling->ID = mem.N;
-        mem.append(sibling);
-        siblingToBeAdded = sibling.get();
-        if(node->parent->getNumDecisions()==-1) sibling->needsWidening=true;
-      }
-    }
-    node->needsWidening=false;
-  }
-
-  //compute
-  bool wasComplete = node->isComplete;
-  if(!node->isComplete){
-    if(opt.verbose>=1) cout << "invested compute in " << *node << "child of" << *node->parent << endl;
-    node->compute();
-  }
-
-  //depending on state -> drop, reinsert, save as solution, or expand
-  if(!node->isFeasible){ //drop node completely
-
-  }else if(!node->isComplete){ //send back to queue
-    addToQueue(node);
-
-  }else if(node->isTerminal){   //save as solution
-    solutions.append(node);
-  }
-
-  else{  //expand or deepen
-    CHECK(node->isComplete, "");
-    CHECK(!node->isTerminal, "");
-
-    int n = node->getNumDecisions();
-    uint createN = n;
-    if(n==-1){ createN=1; } //infinity -> add only the first
-
-    for(uint i=0;i<createN;i++) {
-      NodeP child = node->transition(i);
-      child->ID = mem.N;
-      mem.append(child);
-      addToQueue(child.get());
-      if(n==-1) child->needsWidening=true;
-      
-      // Track skeleton nodes that have created waypoints children
-      if(i == 0 && dynamic_cast<rai::LGPComp2_Skeleton*>(node)) {
-        gittins_triedSkeletons.insert(node);
-        
-        // Check if all skeletons in current batch have been tried
-        if(gittins_triedSkeletons.size() >= gittins_maxSkeletons) {
-          gittins_maxSkeletons += 10;
-        }
-      }
-    }
-  }
-
-  //remember inserting the sibling, FIFO style (also to allow for FIFO mode)
-  if(siblingToBeAdded){
-    addToQueue(siblingToBeAdded);
-  }
-
-  bool becameComplete = (!wasComplete && node->isComplete);
-  if(becameComplete && opt.verbose>=1){
-    printFrontier();
-    if(auto gittinsNode = dynamic_cast<GittinsNode*>(node)){
-      std::cout <<" node '" <<*gittinsNode <<"' became complete and feas: "<< gittinsNode->isFeasible << " after: " << gittinsNode->c <<std::endl;
-    }
-  }
 }
