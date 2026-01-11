@@ -516,10 +516,11 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
     LOG(-1) <<"Path optimization already completed and reset - cannot compute again";
     return;
   }
-
-  for(uint i=0; i<5; i++) if(sol.step()) break;
-
   LGPComp2_root* root = sket->root;
+  double quantum = root->info->quantum;
+  auto startTime = rai::cpuTime();
+  while(rai::cpuTime() - startTime < quantum) if(sol.step()) break;
+
 
   l = sol.ret->eq + sol.ret->ineq;
   isComplete = sol.ret->done;

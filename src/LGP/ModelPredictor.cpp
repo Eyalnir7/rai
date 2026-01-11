@@ -42,32 +42,17 @@ torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& tas
         return torch::Tensor();
     }
 
-    c10::InferenceMode guard;
+    // Convert configuration and task plan to intermediate heterogeneous data
+    IntermediateHeteroData hetero_data = get_hetero_data_input(C, task_plan, device_, action_num);
     
-    torch::Tensor output;
-    {
-        // Use NoGradGuard to prevent gradient tracking
-        torch::NoGradGuard no_grad;
-        
-        // Convert configuration and task plan to intermediate heterogeneous data
-        IntermediateHeteroData hetero_data = get_hetero_data_input(C, task_plan, device_, action_num);
-        
-        // Convert to HeteroGraph
-        HeteroGraph g = convertToHeteroGraph(hetero_data);
-        
-        // Run the model
-        output = runModelForward(g);
-        
-        // Clone and detach to fully break from any computation graph
-        output = output;
-    }
+    // Convert to HeteroGraph
+    HeteroGraph g = convertToHeteroGraph(hetero_data);
     
-    return output;
+    // Run the model
+    return runModelForward(g);
 }
 
 void ModelPredictor::warmUp() {
-    torch::NoGradGuard no_grad;
-    
     // Create dummy inputs with typical sizes
     torch::Dict<std::string, torch::Tensor> x_dict, times_dict, batch_dict, edge_index_dict;
     
@@ -139,8 +124,6 @@ torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     std::chrono::duration<double> elapsed = end - start;
     if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     
-    // Clone and detach to prevent accumulation
-    torch::Tensor result = output.toTensor();
-    
-    return result;
+    // Convert and return (cloning/detaching happens in predict())
+    return output.toTensor();
 }

@@ -31,6 +31,8 @@ void rai::GittinsSearch::step()
     // pop
     if (root->numSkeletonsTried == root->children.N)
     {
+        if (opt.verbose >= 1)
+            cout << "Adding new skeletons to root node" << endl;
         for (int i = 0; i < opt.numTaskPlans; i++)
         {
             NodeP skeletonNode = root->transitionToGittinsNode(root->children.N + i);

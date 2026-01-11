@@ -66,28 +66,25 @@ void GittinsNode::compute() {
 }
 
 double GittinsNode::computePriority() {
-    // if (rai::info().node_type == "ELS") {
-    //     return baseLevel + computePenalty();
-    // }
-    if (rai::info().solver == "ELS") {
-        return baseLevel + computePenalty();
+    if(rai::info().solver == "GITTINS"){
+
+        if(!banditProcess){
+            initBanditProcess();
+        }
+    
+        int compute_units= c/banditProcess->sigma;
+        // convert compute_units to double for more precise gittins index computation
+        double compute_units_double = static_cast<double>(compute_units);
+        auto [st, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+        stopping_time = st; // Store stopping_time for use in compute()
+        // if(getNodeType() == rai::NodeType::RRTNode){
+        //     stopping_time *= 10;
+        // }
+        // cout << "stopping time: " << st << " gittins index: " << gittins_index << endl;
+    
+        return -gittins_index;
     }
-
-    if(!banditProcess){
-        initBanditProcess();
-    }
-
-    int compute_units= c/banditProcess->sigma;
-    // convert compute_units to double for more precise gittins index computation
-    double compute_units_double = static_cast<double>(compute_units);
-    auto [st, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
-    stopping_time = st; // Store stopping_time for use in compute()
-    // if(getNodeType() == rai::NodeType::RRTNode){
-    //     stopping_time *= 10;
-    // }
-    // cout << "stopping time: " << st << " gittins index: " << gittins_index << endl;
-
-    return -gittins_index;
+    return baseLevel + computePenalty();
 }
 
 // TODO: Store the A matrix (used in leonid calculation) of each node type in a file (Maybe use the graph structure of rai to have a single file of all matrices of every node type).

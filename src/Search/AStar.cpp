@@ -70,7 +70,7 @@ void rai::AStar::step(bool fol) {
   //compute
   bool wasComplete = node->isComplete;
   if(!node->isComplete){
-    if(!fol && opt.verbose>=1) cout << "invested compute in " << *node << "child of" << *node->parent << endl;
+    if(!fol && opt.verbose>=2) cout << "invested compute in " << *node << "child of" << *node->parent << endl;
     node->compute();
   }
 
