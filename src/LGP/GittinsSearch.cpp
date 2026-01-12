@@ -21,8 +21,8 @@ rai::GittinsSearch::GittinsSearch(const std::shared_ptr<LGPComp2_root> &_root)
     : root(_root)
 {
     root->ID = 0;
-    mem.append(root);
-    addToQueue(root.get());
+    // mem.append(root);
+    // addToQueue(root.get());
 }
 
 void rai::GittinsSearch::step()
@@ -76,7 +76,7 @@ void rai::GittinsSearch::step()
     bool wasComplete = node->isComplete;
     if (!node->isComplete)
     {
-        if (opt.verbose >= 1)
+        if (opt.verbose >= 2)
             cout << "invested compute in " << *node << "child of" << *node->parent << endl;
         node->compute();
     }

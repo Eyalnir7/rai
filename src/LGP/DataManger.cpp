@@ -119,6 +119,9 @@ std::pair<TransitionData, int> DataManger::getRRTTransitions(int planID, int act
         if (rrtData[key].isMember("planLength")){
             int planLength = rrtData[key]["planLength"].asInt();
             return {extractTransitionData(rrtData[key]), planLength};
+        } else {
+            std::cerr << "Warning: Key " << key << " found but missing planLength" << std::endl;
+            return {TransitionData(),-1};
         }
     } else {
         std::cerr << "Warning: Key " << key << " not found in RRT data" << std::endl;

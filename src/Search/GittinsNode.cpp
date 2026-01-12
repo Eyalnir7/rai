@@ -67,24 +67,33 @@ void GittinsNode::compute() {
 
 double GittinsNode::computePriority() {
     if(rai::info().solver == "GITTINS"){
-
+        // measure time spent in this function
+        meta_c_tot = -rai::cpuTime();
         if(!banditProcess){
-            initBanditProcess();
+            initBP();
         }
     
         int compute_units= c/banditProcess->sigma;
         // convert compute_units to double for more precise gittins index computation
         double compute_units_double = static_cast<double>(compute_units);
+        gittins_c_tot = -rai::cpuTime();
         auto [st, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+        gittins_c_tot += rai::cpuTime();
         stopping_time = st; // Store stopping_time for use in compute()
         // if(getNodeType() == rai::NodeType::RRTNode){
         //     stopping_time *= 10;
         // }
         // cout << "stopping time: " << st << " gittins index: " << gittins_index << endl;
-    
+        meta_c_tot += rai::cpuTime();
         return -gittins_index;
     }
     return baseLevel + computePenalty();
+}
+
+void GittinsNode::initBP() {
+    inference_c_tot = -rai::cpuTime();
+    initBanditProcess();
+    inference_c_tot += rai::cpuTime();
 }
 
 // TODO: Store the A matrix (used in leonid calculation) of each node type in a file (Maybe use the graph structure of rai to have a single file of all matrices of every node type).

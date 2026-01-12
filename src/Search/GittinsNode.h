@@ -19,6 +19,7 @@ struct GittinsNode : rai::ComputeNode {
   virtual rai::Configuration* getConfiguration() { return nullptr; }
 
   virtual void initBanditProcess();
+  void initBP();
 
   virtual rai::TaskPlan getTaskPlan();
   virtual rai::NodeType getNodeType() { return rai::NodeType::Other; }

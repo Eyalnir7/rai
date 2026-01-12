@@ -31,7 +31,7 @@ namespace rai {
   struct ComputeNode : TreeSearchNode {
     double c=0.;     //cost invested into completion of THIS node
     double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
-    double c_now=0., c_tot=0.;
+    double c_now=0., c_tot=0., meta_c_tot=0., gittins_c_tot=0., inference_c_tot=0.;// ctot is time spend in the compute nodes, metaCtot is time spent overall on metareasoning, gittinsCtot is time spent computing the gittins indices (without the inference), inferenceCtot is time spent in the predictor inference + chain construction (which should be fast)
     double baseLevel=0.;
     
     ComputeNode(ComputeNode* parent) : TreeSearchNode(parent) {}
@@ -69,6 +69,9 @@ namespace rai {
       ComputeNode *n = this;
       while(n){
         n->c_tot += c;
+        n->meta_c_tot += meta_c_tot;
+        n->gittins_c_tot += gittins_c_tot;
+        n->inference_c_tot += inference_c_tot;
         n = dynamic_cast<ComputeNode*>(n->parent);
       }
     }

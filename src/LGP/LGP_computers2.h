@@ -64,12 +64,14 @@ struct LGPComp2_root : GittinsNode {
   // NodePredictor manages all prediction logic (GT, myopicGT, GNN)
   std::shared_ptr<NodePredictor> predictor;
 
-  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor = nullptr);
+  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor = nullptr, std::shared_ptr<LGP2_GlobalInfo> _info = nullptr);
 
   virtual rai::Configuration* getConfiguration() override { return &C; }
   virtual void untimedCompute() {}
   // virtual int getNumDecisions(){ return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
-    virtual int getNumDecisions(){ return -1; };
+    virtual int getNumDecisions(){ 
+      cout << "Prediction type: " << info->predictionType << endl;
+      return (info->predictionType == "GT") ? info->numTaskPlans : -1; };
 //    virtual double effortHeuristic(){ return 11.+10.; }
   virtual double branchingPenalty_child(int i);
 
@@ -102,7 +104,7 @@ struct LGPComp2_Skeleton : GittinsNode {
   virtual rai::TaskPlan getTaskPlan() override { return rai::TaskPlan(actionSequence); }
   virtual void initBanditProcess() override;
 
-  virtual int getNumDecisions() { return (root->info->solver == "GITTINS") ? root->info->numWaypoints : -1; }
+  virtual int getNumDecisions() { return (root->info->solver == "GITTINS" && root->info->predictionType == "GNN") ? root->info->numWaypoints : -1; }
 //    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
 //    virtual double effortHeuristic(){ return 10.+10.; }
   virtual double branchingPenalty_child(int i);

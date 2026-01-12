@@ -18,10 +18,10 @@
 #include <Search/NodeTypes.h>
 
 rai::LGPComp2_root::
-    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor)
+    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton, int _runSeed, std::shared_ptr<NodePredictor> _predictor, std::shared_ptr<LGP2_GlobalInfo> _info)
     : GittinsNode(0), C(_C), tamp(_tamp), runSeed(_runSeed) {
   name <<"LGPComp2_root#0";
-  info = make_shared<LGP2_GlobalInfo>();
+  info = _info ? _info : make_shared<LGP2_GlobalInfo>();
   isComplete = true;
   cout << "info->numWaypoints: " << info->numWaypoints << endl;
   cout << "info->numTaskPlans: " << info->numTaskPlans << endl;
