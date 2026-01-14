@@ -69,11 +69,18 @@ namespace rai {
       ComputeNode *n = this;
       while(n){
         n->c_tot += c;
-        n->meta_c_tot += meta_c_tot;
-        n->gittins_c_tot += gittins_c_tot;
-        n->inference_c_tot += inference_c_tot;
         n = dynamic_cast<ComputeNode*>(n->parent);
       }
+    }
+
+    void updateRoot_c(){
+      ComputeNode *n = this;
+      while(n->parent){
+        n = dynamic_cast<ComputeNode*>(n->parent);
+      }
+      n->meta_c_tot += meta_c_tot;
+      n->gittins_c_tot += gittins_c_tot;
+      n->inference_c_tot += inference_c_tot;
     }
   };
   stdOutPipe(ComputeNode)

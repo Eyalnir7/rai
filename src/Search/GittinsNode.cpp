@@ -51,8 +51,8 @@ void GittinsNode::compute() {
             untimedCompute();
         }
         c_now += rai::cpuTime();
-        c += c_now;
         backup_c(c_now);
+        c += c_now;
         if(l>1e9) isFeasible=false;
         f_prio = computePriority();
         if(rai::info().verbose>0){
@@ -66,6 +66,9 @@ void GittinsNode::compute() {
 }
 
 double GittinsNode::computePriority() {
+    meta_c_tot = 0.;
+    inference_c_tot = 0.;
+    gittins_c_tot = 0.;
     if(rai::info().solver == "GITTINS"){
         // measure time spent in this function
         meta_c_tot = -rai::cpuTime();
@@ -85,6 +88,7 @@ double GittinsNode::computePriority() {
         // }
         // cout << "stopping time: " << st << " gittins index: " << gittins_index << endl;
         meta_c_tot += rai::cpuTime();
+        updateRoot_c();
         return -gittins_index;
     }
     return baseLevel + computePenalty();

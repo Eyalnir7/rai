@@ -541,7 +541,7 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
 
     if(root->verbose()>0) LOG(0) <<"path " <<*sol.ret;
     if(root->verbose()>1) cout <<komoPath->report(false, true, root->verbose()>2);
-    if(root->verbose()>0) komoPath->view(root->verbose()>2, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->actionSequence <<"\n"));
+    if(root->verbose()>0) komoPath->view(false, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->actionSequence <<"\n"));
     //komoPath->checkGradients();
     if(root->verbose()>1) komoPath->view_play(root->verbose()>1 && sol.ret->feasible);
 
@@ -558,13 +558,13 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
         auto path = STRING("z.sol_"<<ID<<"/");
 
         komoPath->view_play(false, 0, .1, path);
-        ofstream fil(path + "info.txt");
-        fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->actionSequence <<"\n}" <<endl;
-        fil <<komoPath->report() <<endl;
-        fil <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
-        ofstream cfil(path + "last.g");
-        komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));
-        cfil <<komoPath->world;
+        // ofstream fil(path + "info.txt");
+        // fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->actionSequence <<"\n}" <<endl;
+        // fil <<komoPath->report() <<endl;
+        // fil <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
+        // ofstream cfil(path + "last.g");
+        // komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));
+        // cfil <<komoPath->world;
       }
     }
     if(root->verbose()<2) komoPath->view_close();
