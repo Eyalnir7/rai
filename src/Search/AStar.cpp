@@ -15,6 +15,7 @@
 #include "Search/ComputeNode.h"          // for ComputeNode::c
 #include "Search/GittinsNode.h" // for GittinsNode
 #include <Search/NodeTypes.h>
+#include <Logic/folWorld.h> // for FOL_World_State
 
 rai::AStar::AStar(const std::shared_ptr<rai::TreeSearchNode>& _root, SearchMode _mode)
   : root(_root), mode(_mode) {
@@ -35,12 +36,12 @@ void rai::AStar::step(bool fol) {
     // printFrontier();
     node = queue.pop();
     // downcast the node to a FOL_World_State object
-    // if (opt.verbose >= 1){
-    // if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
-    //   str debug;
-    //   folNode->getDecisionSequence(debug);
-    //   // cout << "Exploring node: " << debug << std::endl;
-    // }}
+    if (opt.verbose >= 2 && fol){
+    if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
+      str debug;
+      folNode->getDecisionSequence(debug);
+      cout << "Exploring node: " << debug << std::endl;
+    }}
     // if(mode==astar){
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
     // }

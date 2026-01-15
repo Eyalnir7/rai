@@ -472,7 +472,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
       if(sket->verbose()>0) { //save video and path and everything
         auto path = STRING("z.sol_"<<ID<<"/");
 
-        komoPath->view_play(false, 0, .1, path);
+        komoPath->view_play(true, 0, .1, path);
         ofstream fil(path + "info.txt");
         fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
         fil <<komoPath->report() <<endl;

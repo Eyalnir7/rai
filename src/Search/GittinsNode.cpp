@@ -72,6 +72,7 @@ double GittinsNode::computePriority() {
     if(rai::info().solver == "GITTINS"){
         // measure time spent in this function
         meta_c_tot = -rai::cpuTime();
+        inference_c_tot = 0;
         if(!banditProcess){
             initBP();
         }
