@@ -1,6 +1,8 @@
 #include "shaders.cxx"
 #include "RenderData.h"
 
+#ifdef RAI_GL
+
 #include <sstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -1045,5 +1047,25 @@ void RenderData::report(std::ostream& os){
   <<" #distMarkers: " <<distMarkers.pos.d0
   <<endl;
 }
+
+#else
+
+namespace rai {
+void RenderData::glDeinitialize(OpenGL& gl){ NICO }
+RenderData::RenderData(){ NICO }
+void RenderData::addAxes(double scale, const rai::Transformation& _X){ NICO }
+RenderAsset& RenderData::add(const Transformation& _X, RenderType _type){ NICO }
+void RenderAsset::tensor(const floatA& vol, const arr& size){ NICO }
+  void RenderAsset::pointCloud(const arr& points, const arr& color){ NICO }
+  void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size, const arr& color){ NICO }
+  void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){ NICO }
+  void RenderAsset::lines(const arr& lines, const arr& color){ NICO }
+  RenderAsset& RenderData::addShared(std::shared_ptr<RenderItem> _item, const rai::Transformation& _X, RenderType _type){ NICO }
+  RenderData& RenderData::addStandardScene(bool addFloor){ NICO }
+  void RenderData::setText(const char* text){ NICO }
+  RenderData& RenderData::clear(){ NICO }
+    void RenderData::glDraw(OpenGL& gl){ NICO }
+
+#endif
 
 }//namespace
