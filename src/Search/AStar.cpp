@@ -46,7 +46,7 @@ void rai::AStar::step(bool fol) {
     //   CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
     // }
     currentLevel = node->f_prio;
-  }else if(mode==treePolicy){
+  }else if(mode==treePolicy){ 
     node = selectByTreePolicy();
   }
   //    LOG(0) <<"looking at node '" <<*node <<"'";

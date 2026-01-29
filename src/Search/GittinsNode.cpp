@@ -34,7 +34,7 @@ using namespace rai;
 void GittinsNode::initBanditProcess() {
     // Default implementation - can be overridden by derived classes
     // For now, create an empty BanditProcess
-    banditProcess = std::make_unique<rai::BanditProcess>();
+    banditProcess = std::make_unique<rai::BanditProcess>(); 
 }
 
 rai::TaskPlan GittinsNode::getTaskPlan() {

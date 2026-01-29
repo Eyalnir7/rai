@@ -5,7 +5,7 @@
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
+#define RAI_gl
 #include "plot.h"
 #include "../Geo/geo.h"
 #include "../Geo/mesh.h"

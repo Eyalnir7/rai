@@ -1,6 +1,6 @@
 #include "shaders.cxx"
 #include "RenderData.h"
-
+#define RAI_gl
 #ifdef RAI_GL
 
 #include <sstream>

@@ -5,7 +5,7 @@
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
-
+#define RAI_gl
 #ifdef RAI_GL
 #  ifndef RAI_MSVC
 #    include <GL/glew.h>

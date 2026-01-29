@@ -28,7 +28,7 @@ rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool
 
   isComplete = true;
   fol_astar = make_shared<rai::AStar>(make_shared<rai::FOL_World_State>(L, nullptr, false));
-  fol_astar -> verbose = info->verbose - 2;
+  fol_astar -> verbose = info->verbose - 2; 
 }
 
 double rai::LGPComp_root::branchingPenalty_child(int i) {

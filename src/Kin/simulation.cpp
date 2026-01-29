@@ -18,6 +18,7 @@
 
 #include <iomanip>
 //#define BACK_BRIDGE
+#define RAI_gl
 
 template<> const char* rai::Enum<rai::Simulation::Engine>::names []= {
   "none", "physx", "bullet", "kinematic", nullptr
