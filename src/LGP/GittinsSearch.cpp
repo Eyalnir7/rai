@@ -35,7 +35,7 @@ void rai::GittinsSearch::step()
             cout << "Adding new skeletons to root node" << endl;
         for (int i = 0; i < opt.numTaskPlans; i++)
         {
-            NodeP skeletonNode = root->transitionToGittinsNode(root->children.N + i);
+            NodeP skeletonNode = root->transitionToGittinsNode(root->children.N);
             skeletonNode->ID = mem.N;
             mem.append(skeletonNode);
             addToQueue(skeletonNode.get());
@@ -136,7 +136,7 @@ void rai::GittinsSearch::step()
     }
 
     bool becameComplete = (!wasComplete && node->isComplete);
-    if (becameComplete && opt.verbose >= 1)
+    if (becameComplete && opt.verbose > 1)
     {
         printFrontier();
         std::cout << " node '" << *node << "' became complete and feas: " << node->isFeasible << " after: " << node->c << std::endl;

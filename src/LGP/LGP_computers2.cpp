@@ -64,7 +64,8 @@ double rai::LGPComp2_Skeleton::computePriority(){
     return -2;
   }
   // Use parent's implementation (GittinsNode::computePriority)
-  return GittinsNode::computePriority();
+  double priority = GittinsNode::computePriority();
+  return priority;
 }
 
 void rai::LGPComp2_Skeleton::untimedCompute() {
@@ -81,11 +82,17 @@ void rai::LGPComp2_Skeleton::untimedCompute() {
   l=0.;
 
   if(root->info->verbose>0) LOG(0) <<"FOL action sequence:" <<actionSequence;
+    if(root->info->AstarVerbose>0){
+    cout <<name << " with action sequence: " << actionSequence;
+  }
   // if(root->info->verbose>1) LOG(0) <<skeleton;
 }
 
 void rai::LGPComp2_Skeleton::initBanditProcess() {
   auto bp = root->predictor->predict_waypoints(num, root->C, actionSequence);
+  if(root->info->AstarVerbose>0){
+    cout << "Action sequence " << actionSequence << " has gittins index: " << bp.compute_gittins_index(0) << endl;
+  }
   banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
 }
 
