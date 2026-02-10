@@ -71,7 +71,7 @@ void rai::AStar::step(bool fol) {
   //compute
   bool wasComplete = node->isComplete;
   if(!node->isComplete){
-    if(!fol && opt.verbose>=2) cout << "invested compute in " << *node << "child of" << *node->parent << endl;
+    if(!fol && opt.verbose>=3) cout << "invested compute in " << *node << "child of" << *node->parent << endl;
     node->compute();
   }
 
@@ -120,7 +120,7 @@ void rai::AStar::step(bool fol) {
   }
 
   bool becameComplete = (!wasComplete && node->isComplete);
-  if(becameComplete && !fol && opt.verbose>=1){
+  if(becameComplete && !fol && opt.verbose>=2){
     printFrontier();
     // convert node to GittinsNode to access taskPlan
     if(auto gittinsNode = dynamic_cast<GittinsNode*>(node)){

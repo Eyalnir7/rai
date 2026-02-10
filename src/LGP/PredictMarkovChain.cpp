@@ -3,8 +3,32 @@
 #include <Search/MarkovChain.h>
 #include <torch/torch.h>
 #include <random>
+#include <filesystem>
 
 namespace rai {
+
+//===========================================================================
+// Helper function to find model file by pattern
+//===========================================================================
+
+std::string findModelFile(const std::string& model_dir, const std::string& pattern) {
+  try {
+    for (const auto& entry : std::filesystem::directory_iterator(model_dir)) {
+      if (entry.is_regular_file()) {
+        std::string filename = entry.path().filename().string();
+        if (filename.find(pattern) == 0) {  // Check if filename starts with pattern
+          return entry.path().string();
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    std::cout << "Error searching for model file in " << model_dir << ": " << e.what() << std::endl;
+  }
+  
+  // If not found, return the original path for backward compatibility
+  std::cout << "Warning: Could not find model file matching '" << pattern << "' in " << model_dir << std::endl;
+  return model_dir + pattern + ".pt";
+}
 
 //===========================================================================
 // NodePredictor Implementation
@@ -26,13 +50,13 @@ void NodePredictor::initializeGNNModels(const std::string& model_dir) {
   std::cout << "Using device: " << (device.is_cuda() ? "CUDA" : "CPU") << std::endl;
   
   try {
-    model_feasibility_lgp = std::make_shared<ModelPredictor>(model_dir + "model_FEASIBILITY_LGP.pt", device);
-    model_feasibility_waypoints = std::make_shared<ModelPredictor>(model_dir + "model_FEASIBILITY_WAYPOINTS.pt", device);
-    model_qr_feas_lgp = std::make_shared<ModelPredictor>(model_dir + "model_QUANTILE_REGRESSION_FEAS_LGP.pt", device);
-    model_qr_feas_rrt = std::make_shared<ModelPredictor>(model_dir + "model_QUANTILE_REGRESSION_FEAS_RRT.pt", device);
-    model_qr_feas_waypoints = std::make_shared<ModelPredictor>(model_dir + "model_QUANTILE_REGRESSION_FEAS_WAYPOINTS.pt", device);
-    model_qr_infeas_lgp = std::make_shared<ModelPredictor>(model_dir + "model_QUANTILE_REGRESSION_INFEAS_LGP.pt", device);
-    model_qr_infeas_waypoints = std::make_shared<ModelPredictor>(model_dir + "model_QUANTILE_REGRESSION_INFEAS_WAYPOINTS.pt", device);
+    model_feasibility_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_LGP"), device);
+    model_feasibility_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_WAYPOINTS"), device);
+    model_qr_feas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_LGP"), device);
+    model_qr_feas_rrt = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_RRT"), device);
+    model_qr_feas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_WAYPOINTS"), device);
+    model_qr_infeas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_LGP"), device);
+    model_qr_infeas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_WAYPOINTS"), device);
     
     std::cout << "All GNN models loaded successfully" << std::endl;
   } catch (const std::exception& e) {
