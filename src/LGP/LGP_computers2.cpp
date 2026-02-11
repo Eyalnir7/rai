@@ -30,7 +30,7 @@ rai::LGPComp2_root::
   if (_predictor) {
     predictor = _predictor;
   } else {
-    predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->modelsDir.p);
+    predictor = make_shared<NodePredictor>(info->predictionType, info->solver, info->device, info->modelsDir.p);
   }
 }
 

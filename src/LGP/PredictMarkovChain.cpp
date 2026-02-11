@@ -34,9 +34,12 @@ std::string findModelFile(const std::string& model_dir, const std::string& patte
 // NodePredictor Implementation
 //===========================================================================
 
-NodePredictor::NodePredictor(const String& _predictionType, const String& _solver, const String& modelDir)
-  : predictionType(_predictionType), solver(_solver) {
+NodePredictor::NodePredictor(const String& _predictionType, const String& _solver, const String& _device, const String& modelDir)
+  : predictionType(_predictionType), solver(_solver), device(torch::kCPU) {
   
+  if (_device == "cuda" && torch::cuda::is_available()) {
+    device = torch::kCUDA;
+  }
   // Only initialize GNN models if using GNN prediction with GITTINS solver
   if(predictionType == "GNN" && solver == "GITTINS" && modelDir.N > 0) {
     initializeGNNModels(modelDir.p);
@@ -46,7 +49,6 @@ NodePredictor::NodePredictor(const String& _predictionType, const String& _solve
 void NodePredictor::initializeGNNModels(const std::string& model_dir) {
   std::cout << "Initializing GNN models from directory: " << model_dir << std::endl;
   
-  torch::Device device = torch::cuda::is_available() ? torch::kCUDA : torch::kCPU;
   std::cout << "Using device: " << (device.is_cuda() ? "CUDA" : "CPU") << std::endl;
   
   try {
@@ -476,32 +478,30 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
     torch::Tensor& feas_quantiles_tensor,
     torch::Tensor& infeas_quantiles_tensor) {
     
-    // Squeeze tensors to remove batch dimension if present
-    feasibility = feasibility.squeeze();
-    feas_quantiles_tensor = feas_quantiles_tensor.squeeze();
-    infeas_quantiles_tensor = infeas_quantiles_tensor.squeeze();
+    // 1. Move everything to CPU first
+    torch::Tensor feas_cpu = feasibility.squeeze().to(torch::kCPU);
+    torch::Tensor feas_q_cpu = feas_quantiles_tensor.squeeze().to(torch::kCPU);
+    torch::Tensor infeas_q_cpu = infeas_quantiles_tensor.squeeze().to(torch::kCPU);
     
-    // Convert feasibility tensor (size 1) to double
-    double avgFeas = feasibility.item<double>();
+    // 2. Now it is safe to use .item() and accessors
+    double avgFeas = feas_cpu.item<double>();
     
-    // Convert quantile tensors (size 5) to std::vector<int> by rounding up
     std::vector<int> feas_quantiles_vec;
     std::vector<int> infeas_quantiles_vec;
     
-    auto feas_accessor = feas_quantiles_tensor.accessor<float, 1>();
+    // Use the CPU-resident tensors for accessors
+    auto feas_accessor = feas_q_cpu.accessor<float, 1>();
     for (int i = 0; i < feas_accessor.size(0); ++i) {
         feas_quantiles_vec.push_back(static_cast<int>(std::ceil(feas_accessor[i])));
     }
     
-    auto infeas_accessor = infeas_quantiles_tensor.accessor<float, 1>();
+    auto infeas_accessor = infeas_q_cpu.accessor<float, 1>();
     for (int i = 0; i < infeas_accessor.size(0); ++i) {
         infeas_quantiles_vec.push_back(static_cast<int>(std::ceil(infeas_accessor[i])));
     }
     
-    // Define quantile levels (assuming 5 quantiles)
     std::vector<double> quantile_levels = {0.1, 0.3, 0.5, 0.7, 0.9};
     
-    // Get MarkovChain from quantiles
     return get_markov_chain_from_quantiles(feas_quantiles_vec, infeas_quantiles_vec, quantile_levels, avgFeas);
 }
 
@@ -599,6 +599,7 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     
     // Apply sigmoid to feasibility
     feasibility = torch::sigmoid(feasibility);
+    int verbose = rai::getParameter<int>("GNN/verbose", 0);
     
     // Apply softplus to quantiles (except first entry)
     feas_quantiles = feas_quantiles.squeeze();
@@ -611,18 +612,19 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
-    
-    // std::cout << "Waypoints predictions:" << std::endl;
-    // std::cout << "  feasibility shape: " << feasibility.sizes() << ", value: " << feasibility << std::endl;
-    // std::cout << "  feas_quantiles shape: " << feas_quantiles.sizes() << ", values: " << feas_quantiles << std::endl;
-    // std::cout << "  infeas_quantiles shape: " << infeas_quantiles.sizes() << ", values: " << infeas_quantiles << std::endl;
+    if(verbose> 1){
+        std::cout << "Waypoints predictions:" << std::endl;
+        std::cout << "  feasibility shape: " << feasibility.sizes() << ", value: " << feasibility << std::endl;
+        std::cout << "  feas_quantiles shape: " << feas_quantiles.sizes() << ", values: " << feas_quantiles << std::endl;
+        std::cout << "  infeas_quantiles shape: " << infeas_quantiles.sizes() << ", values: " << infeas_quantiles << std::endl;
+    }
 
     Array<MarkovChain> result;
     result.append(convert_tensors_to_markov_chain(feasibility, feas_quantiles, infeas_quantiles));
     int planLength = taskPlan.N;
     Array<MarkovChain> rrtChains;;
     for(int i = 0; i < planLength; ++i) {
-        torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i).detach();
+        torch::Tensor rrt_feas_quantiles = model_qr_feas_rrt->predict(C, taskPlan, i).detach().to(torch::kCPU);
         rrt_feas_quantiles = rrt_feas_quantiles.squeeze();  // Remove batch dimension
         
         // Apply softplus to all entries except the first
@@ -630,8 +632,9 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
             rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
                 torch::nn::functional::softplus(rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
         }
-        
-        // std::cout << "RRT action " << i << " feas_quantiles shape: " << rrt_feas_quantiles.sizes() << ", values: " << rrt_feas_quantiles << std::endl;
+        if(verbose > 1){
+            std::cout << "RRT action " << i << " feas_quantiles shape: " << rrt_feas_quantiles.sizes() << ", values: " << rrt_feas_quantiles << std::endl;
+        }
         std::vector<int> feas_quantiles_vec;
         auto feas_accessor = rrt_feas_quantiles.accessor<float, 1>();
         for (int i = 0; i < feas_accessor.size(0); ++i) {
@@ -641,9 +644,9 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0);
         result.append(rrtWaypointsMC);
     }
-    torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan).detach();
-    torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan).detach();
-    torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan).detach();
+    torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan).detach().to(torch::kCPU);
+    torch::Tensor lgp_feas_quantiles = model_qr_feas_lgp->predict(C, taskPlan).detach().to(torch::kCPU);
+    torch::Tensor lgp_infeas_quantiles = model_qr_infeas_lgp->predict(C, taskPlan).detach().to(torch::kCPU);
     
     // Apply sigmoid to feasibility
     lgp_feasibility = torch::sigmoid(lgp_feasibility);
@@ -659,11 +662,12 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
-    
-    // std::cout << "LGP predictions:" << std::endl;
-    // std::cout << "  feasibility shape: " << lgp_feasibility.sizes() << ", value: " << lgp_feasibility << std::endl;
-    // std::cout << "  feas_quantiles shape: " << lgp_feas_quantiles.sizes() << ", values: " << lgp_feas_quantiles << std::endl;
-    // std::cout << "  infeas_quantiles shape: " << lgp_infeas_quantiles.sizes() << ", values: " << lgp_infeas_quantiles << std::endl;
+    if(verbose > 1){
+        std::cout << "LGP predictions:" << std::endl;
+        std::cout << "  feasibility shape: " << lgp_feasibility.sizes() << ", value: " << lgp_feasibility << std::endl;
+        std::cout << "  feas_quantiles shape: " << lgp_feas_quantiles.sizes() << ", values: " << lgp_feas_quantiles << std::endl;
+        std::cout << "  infeas_quantiles shape: " << lgp_infeas_quantiles.sizes() << ", values: " << lgp_infeas_quantiles << std::endl;
+    }
     
     result.append(convert_tensors_to_markov_chain(lgp_feasibility, lgp_feas_quantiles, lgp_infeas_quantiles));
     // std::cout << "=== End GNN_predict_waypoints_chains ===\n" << std::endl;

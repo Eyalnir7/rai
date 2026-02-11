@@ -24,6 +24,7 @@ namespace rai {
 struct NodePredictor {
   String predictionType;  // "GT", "myopicGT", "GNN", or "none"
   String solver;          // "GITTINS" or other
+  torch::Device device;   // Device for GNN models
   
   // GNN models (only initialized if predictionType == "GNN" && solver == "GITTINS")
   std::shared_ptr<ModelPredictor> model_feasibility_lgp;
@@ -34,7 +35,7 @@ struct NodePredictor {
   std::shared_ptr<ModelPredictor> model_qr_infeas_lgp;
   std::shared_ptr<ModelPredictor> model_qr_infeas_waypoints;
   
-  NodePredictor(const String& _predictionType, const String& _solver, const String& modelDir = "");
+  NodePredictor(const String& _predictionType, const String& _solver, const String& _device="cpu", const String& modelDir = "");
   
   // Prediction methods - automatically dispatch to correct implementation
   BanditProcess predict_waypoints(int planID, Configuration& C, StringAA taskPlan);

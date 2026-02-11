@@ -24,6 +24,7 @@ namespace rai {
     RAI_PARAM("LGP/", rai::String, node_type, "ELS") // ELS or Gittins
     RAI_PARAM("", rai::String, solver, "ELS");
     RAI_PARAM("", int, runSeed, 0);
+    RAI_PARAM("device", String, device, "cpu")
   };
 
   NodeGlobal& info();
