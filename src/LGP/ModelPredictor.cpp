@@ -46,7 +46,7 @@ torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& tas
     IntermediateHeteroData hetero_data = get_hetero_data_input(C, task_plan, device_, action_num);
     
     // Convert to HeteroGraph
-    HeteroGraph g = convertToHeteroGraph(hetero_data);
+    HeteroGraph g = convertToHeteroGraph(hetero_data, device_);
     
     // Run the model
     return runModelForward(g);
@@ -89,14 +89,18 @@ void ModelPredictor::warmUp() {
     
     // Run a few warm-up passes to trigger JIT compilation
     for (int i = 0; i < 3; i++) {
+        auto start = std::chrono::high_resolution_clock::now();
         auto output = module_.forward(inputs);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     }
 }
 
 torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
-    // Convert unordered_map → torch::Dict<string, Tensor>
     torch::Dict<std::string, torch::Tensor> x_dict, times_dict, edge_index_dict, batch_dict;
 
+    // IMPORTANT: Every tensor must be explicitly moved to device_
     for (const auto& kv : g.x_dict)
         x_dict.insert(kv.first, kv.second);
 
@@ -109,21 +113,18 @@ torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     for (const auto& kv : g.batch_dict)
         batch_dict.insert(kv.first, kv.second);
 
-    // Prepare inputs vector in correct order for bestScriptedModel.py
-    // forward(x_dict, times_dict, edge_index_dict, batch_dict)
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(x_dict);
     inputs.push_back(times_dict);
     inputs.push_back(edge_index_dict);
     inputs.push_back(batch_dict);
 
-    // Forward pass with timing
     auto start = std::chrono::high_resolution_clock::now();
     torch::IValue output = module_.forward(inputs);
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
+        std::chrono::duration<double> elapsed = end - start;
     if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     
-    // Convert and return (cloning/detaching happens in predict())
+    // ... existing timing and return logic ...
     return output.toTensor();
 }

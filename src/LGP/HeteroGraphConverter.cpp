@@ -313,8 +313,11 @@ IntermediateHeteroData get_hetero_data_input(
     return result;
 }
 
-HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
+HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm, torch::Device device) {
     HeteroGraph g;
+
+    // Standard options for index and metadata tensors
+    auto long_options = torch::TensorOptions().dtype(torch::kLong).device(device);
 
     // Helper lambda: stack vector<Tensor> into one tensor
     auto stack_or_empty = [](const std::vector<torch::Tensor>& vec) {
@@ -345,14 +348,12 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
         const auto& names = nt.data->names;
         size_t num_nodes = names.size();
         
-        // Sanity check for corrupted size
         if (num_nodes > 1000000) {
             std::cerr << "ERROR: Suspiciously large number of nodes (" << num_nodes 
                       << ") for type " << nt.type << std::endl;
             continue;
         }
         
-        // Debug: Check times vector size matches nodes
         if (nt.data->times.size() != num_nodes) {
             std::cerr << "ERROR: Mismatch for " << nt.type << " - names.size()=" 
                       << num_nodes << " but times.size()=" << nt.data->times.size() << std::endl;
@@ -363,7 +364,7 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
         for (int i = 0; i < (int)num_nodes; i++)
             name_to_type_idx[std::string(names[i])] = {nt.type, i};
 
-        // fill features (only for feature node types, not constraint types pick/place)
+        // fill features (already moved to device in get_hetero_data_input)
         if (nt.type != "pick" && nt.type != "place") {
             torch::Tensor features = stack_or_empty(nt.data->features);
             if (features.defined() && features.numel() > 0) {
@@ -371,14 +372,13 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
             }
         }
 
-        // fill times - but only if we have nodes
+        // fill times - explicitly on device
         if (num_nodes > 0) {
-            torch::Tensor t = torch::tensor(nt.data->times, torch::kLong);
-            g.times_dict[nt.type] = t;
+            g.times_dict[nt.type] = torch::tensor(nt.data->times, long_options);
         }
 
-        // batch indices: all zeros for single graph (not batched)
-        g.batch_dict[nt.type] = torch::zeros({(long)num_nodes}, torch::kLong);
+        // batch indices - explicitly on device
+        g.batch_dict[nt.type] = torch::zeros({(long)num_nodes}, long_options);
     }
 
     // ---- BUILD EDGE INDEX DICTIONARY ----
@@ -389,9 +389,10 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
                                 const std::vector<int>& srcIdxs,
                                 const std::vector<int>& dstIdxs)
     {
+        // Stack tensors directly on the target device
         auto edge_index = torch::stack({
-            torch::tensor(srcIdxs, torch::kLong),
-            torch::tensor(dstIdxs, torch::kLong)
+            torch::tensor(srcIdxs, long_options),
+            torch::tensor(dstIdxs, long_options)
         });
 
         std::string key = srcType + "___" + edgeName + "___" + dstType;
@@ -402,15 +403,13 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
     auto process_pair_edges = [&](const std::string& edgeName,
                                   const EdgeData& ed)
     {
-        // Accumulate per (srcType,dstType) groups
         std::unordered_map<std::string, std::vector<int>> src_acc;
         std::unordered_map<std::string, std::vector<int>> dst_acc;
 
         for (auto& e : ed.edges) {
             auto it1 = name_to_type_idx.find(std::string(e.first));
             auto it2 = name_to_type_idx.find(std::string(e.second));
-            if (it1 == name_to_type_idx.end() ||
-                it2 == name_to_type_idx.end()) continue;
+            if (it1 == name_to_type_idx.end() || it2 == name_to_type_idx.end()) continue;
 
             auto [t1, i1] = it1->second;
             auto [t2, i2] = it2->second;
@@ -420,14 +419,12 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
             dst_acc[key].push_back(i2);
 
             if (!ed.directed) {
-                // add reverse edge
                 std::string keyR = t2 + "___" + t1;
                 src_acc[keyR].push_back(i2);
                 dst_acc[keyR].push_back(i1);
             }
         }
 
-        // Now build tensors and insert
         for (auto& kv : src_acc) {
             std::string types = kv.first;
             auto pos = types.find("___");
@@ -438,11 +435,9 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
         }
     };
 
-    // --- process simple pair edges ---
     process_pair_edges("close_edge", interm.close_edges);
     process_pair_edges("time_edge",  interm.time_edges);
 
-    // --- process sink edges ---
     auto process_sink_edges = [&](const std::string& edgeName,
                                   const SinkEdgeData& sed)
     {
@@ -491,4 +486,3 @@ HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm) {
 
     return g;
 }
-

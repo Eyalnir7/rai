@@ -51,7 +51,7 @@ struct IntermediateHeteroData {
 };
 
 // Main function to convert rai::Configuration to HeteroGraph with task plan
-HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm);
+HeteroGraph convertToHeteroGraph(const IntermediateHeteroData& interm, torch::Device device);
 
 // Return intermediate data structure analogous to Python get_hetero_data_input
 IntermediateHeteroData get_hetero_data_input(
