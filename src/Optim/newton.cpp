@@ -264,7 +264,8 @@ OptNewton& OptNewton::setBounds(const arr& _bounds) {
     CHECK_EQ(bounds.d1, x.N, "");
     bool good = boundCheck(x, bounds);
     if(!good) HALT("seed x is not within bounds")
-//    boundClip(x, bounds_lo, bounds_up);
+    // if(!good) reinit(x);
+  //  boundClip(x, bounds_lo, bounds_up);
 //    reinit(x);
     }
   return *this;

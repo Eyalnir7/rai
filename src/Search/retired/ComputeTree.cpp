@@ -66,7 +66,7 @@ void ComputeTree_Solver::query(CT_Node* n) {
     n->parent->c_children++;
 
     if(n->comp->isComplete) {
-      if(opt.verbose>0) LOG(0) <<"computed " <<n->comp->name <<" -> complete with c=" <<n->comp->c <<" l=" <<n->comp->l;
+      if(opt.verbose>2) LOG(0) <<"computed " <<n->comp->name <<" -> complete with c=" <<n->comp->c <<" l=" <<n->comp->l;
       CHECK_GE(n->comp->l, 0., "lower bound was not computed");
       if(n->comp->isTerminal) {
         terminals.append(n);
@@ -85,7 +85,7 @@ void ComputeTree_Solver::query(CT_Node* n) {
         }
       }
     } else {
-      if(opt.verbose>0) LOG(0) <<"computed " <<n->comp->name <<" -> still incomplete with c=" <<n->comp->c;
+      if(opt.verbose>2) LOG(0) <<"computed " <<n->comp->name <<" -> still incomplete with c=" <<n->comp->c;
     }
 
     //backup compute costs

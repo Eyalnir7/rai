@@ -17,7 +17,7 @@ NodeGlobal& info() {
 }
 
 void rai::ComputeNode::compute(){
-  if(info().verbose>0){
+  if(info().verbose>2){ 
     LOG(0) <<"compute at " <<name <<" ...";
   }
   // std::cout << "Computing node: " << name << " with f_prio of " << f_prio << std::endl;
@@ -29,7 +29,7 @@ void rai::ComputeNode::compute(){
   if(l>1e9) isFeasible=false;
   // f_prio = baseLevel + computePenalty();
   f_prio = computePriority();
-  if(info().verbose>0){
+  if(info().verbose>2){
     if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
     else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
   }

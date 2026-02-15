@@ -95,7 +95,7 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
       str& gripper = action(3);
       manip.action_pick(action(0), time, gripper, obj);
 
-    }else if(action(0)=="place_straightOn" || action(0) == "place_straightOn_goal"){
+    }else if(action(0)=="place_straightOn" || action(0) == "place_straightOn_goal" || action(0) == "place_straightOn_obstacle"){
       str& obj = action(1);
       str& table = action(3);
       manip.action_place_straightOn(action(0), time, obj, table);

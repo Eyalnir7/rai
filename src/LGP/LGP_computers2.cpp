@@ -247,7 +247,7 @@ void rai::LGPComp2_Waypoints::untimedCompute() {
   isComplete = ret->done;
 
   //    checkJacobianCP(*komoWaypoints->nlp_SparseNonFactored(), komoWaypoints->x, 1e-6);
-  if(root->verbose()>0) LOG(0) <<"ways " <<*ret;
+  if(root->verbose()>2) LOG(0) <<"ways " <<*ret;
   //if(root->verbose()>1) cout <<komoWaypoints->report(false, true, root->verbose()>3);
   if(root->verbose()>3) {
     // komoWaypoints->pathConfig.coll_reportProxies();
@@ -272,7 +272,7 @@ void rai::LGPComp2_Waypoints::untimedCompute() {
     } else {
       // cout << "waypoints feasible!" <<endl;
       isFeasible = true;
-      if(root->verbose()>2) komoWaypoints->view(root->verbose()>3, STRING(name <<" - final, c:" <<c <<"\n" <<*ret));
+      if(root->verbose()>1) komoWaypoints->view(true, STRING(name <<" - final, c:" <<c <<"\n" <<*ret));
       if(root->verbose()>3) komoWaypoints->view_play(true);
       //    if(root->verbose()>1){
       //      static int count=0;
@@ -472,6 +472,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
   komoPath->initWithWaypoints(ways->komoWaypoints->getPath_qAll());   //non-interpolating
 //  if(rrtpath.N) komoPath->initWithPath_qOrg(rrtpath);
   komoPath->run_prepare(0.);
+  boundClip(komoPath->x, komoPath->nlp()->bounds);
   if(root->verbose()>2) komoPath->view(root->verbose()>3, STRING(name <<" - init with constant waypoints"));
   if(root->verbose()>3) komoPath->view_play(true, 0, .1);
 

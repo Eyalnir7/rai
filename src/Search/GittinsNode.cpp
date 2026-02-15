@@ -55,7 +55,7 @@ void GittinsNode::compute() {
         c += c_now;
         if(l>1e9) isFeasible=false;
         f_prio = computePriority();
-        if(rai::info().verbose>0){
+        if(rai::info().verbose>2){
             if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
             else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
         }
