@@ -74,7 +74,7 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
 
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
     ManipulationHelper manip;
-    manip.setup_sequence(C, K, -1e-2, 1e-2, false, false, true);
+    manip.setup_sequence(C, K, -1e-2, 1e-2, waypointsCollision, false, true);
     // manip.setup_sequence(C, K,);
     return manip.komo;
   }

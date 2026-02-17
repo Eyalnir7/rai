@@ -557,8 +557,9 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
       //l = 1e10;
       isFeasible = false;
       komoPath->view_close();
-      if(root->verbose()>1) {
+      if(root->verbose()>0) {
         cout <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
+        komoPath->view_play(true, 0, .1, nullptr);
       }
     } else {
       isFeasible = true;
