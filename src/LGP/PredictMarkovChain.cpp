@@ -1,5 +1,6 @@
 #include "PredictMarkovChain.h"
 #include "ModelPredictor.h"
+#include "LGP_computers2.h"
 #include <Search/MarkovChain.h>
 #include <torch/torch.h>
 #include <random>
@@ -36,6 +37,11 @@ std::string findModelFile(const std::string& model_dir, const std::string& patte
 
 NodePredictor::NodePredictor(const String& _predictionType, const String& _solver, const String& _device, const String& modelDir)
   : predictionType(_predictionType), solver(_solver), device(torch::kCPU) {
+  {
+    rai::LGP2_GlobalInfo _info;
+    gnn_verbose = _info.gnn_verbose;
+    cout << "gnn_verbose: " << gnn_verbose << endl;
+  }
   
   if (_device == "cuda" && torch::cuda::is_available()) {
     device = torch::kCUDA;
@@ -52,13 +58,13 @@ void NodePredictor::initializeGNNModels(const std::string& model_dir) {
   std::cout << "Using device: " << (device.is_cuda() ? "CUDA" : "CPU") << std::endl;
   
   try {
-    model_feasibility_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_LGP"), device);
-    model_feasibility_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_WAYPOINTS"), device);
-    model_qr_feas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_LGP"), device);
-    model_qr_feas_rrt = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_RRT"), device);
-    model_qr_feas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_WAYPOINTS"), device);
-    model_qr_infeas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_LGP"), device);
-    model_qr_infeas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_WAYPOINTS"), device);
+    model_feasibility_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_LGP"), device, gnn_verbose);
+    model_feasibility_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_FEASIBILITY_WAYPOINTS"), device, gnn_verbose);
+    model_qr_feas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_LGP"), device, gnn_verbose);
+    model_qr_feas_rrt = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_RRT"), device, gnn_verbose);
+    model_qr_feas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_FEAS_WAYPOINTS"), device, gnn_verbose);
+    model_qr_infeas_lgp = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_LGP"), device, gnn_verbose);
+    model_qr_infeas_waypoints = std::make_shared<ModelPredictor>(findModelFile(model_dir, "model_QUANTILE_REGRESSION_INFEAS_WAYPOINTS"), device, gnn_verbose);
     
     std::cout << "All GNN models loaded successfully" << std::endl;
   } catch (const std::exception& e) {
@@ -153,9 +159,9 @@ MarkovChain get_markov_chain_from_quantiles(
     const std::vector<int>& feas_quantiles,
     const std::vector<int>& infeas_quantiles,
     const std::vector<double>& quantile_levels,
-    double avgFeas
+    double avgFeas,
+    int verbose
 ) {
-    int verbose = rai::getParameter<int>("GNN/verbose", 0);
     if(verbose > 1){
       std::cout << "average feasibility: " << avgFeas << std::endl;
       //print the inputs
@@ -502,7 +508,7 @@ MarkovChain NodePredictor::convert_tensors_to_markov_chain(
     
     std::vector<double> quantile_levels = {0.1, 0.3, 0.5, 0.7, 0.9};
     
-    return get_markov_chain_from_quantiles(feas_quantiles_vec, infeas_quantiles_vec, quantile_levels, avgFeas);
+    return get_markov_chain_from_quantiles(feas_quantiles_vec, infeas_quantiles_vec, quantile_levels, avgFeas, gnn_verbose);
 }
 
 Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
@@ -535,7 +541,7 @@ Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C
         waypoints_feas_quantiles, 
         waypoints_infeas_quantiles, 
         {0.1, 0.3, 0.5, 0.7, 0.9}, 
-        waypoints_feas
+        waypoints_feas, 0
     );
     result.append(waypoints_mc);
     
@@ -555,7 +561,7 @@ Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C
             rrt_feas_quantiles, 
             {}, 
             {0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 
-            1.0
+            1.0, 0
         );
         result.append(rrt_mc);
     }
@@ -581,7 +587,7 @@ Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C
         lgp_feas_quantiles, 
         lgp_infeas_quantiles, 
         {0.1, 0.3, 0.5, 0.7, 0.9}, 
-        lgp_feas
+        lgp_feas, 0
     );
     result.append(lgp_mc);
     
@@ -589,7 +595,7 @@ Array<MarkovChain> NodePredictor::test_predict_waypoints_chains(Configuration& C
 }
 
 Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C, StringAA taskPlan){
-    // std::cout << "\n=== GNN_predict_waypoints_chains ===" << std::endl;
+    int verbose = gnn_verbose;
     
     torch::NoGradGuard no_grad;
     
@@ -599,16 +605,15 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     
     // Apply sigmoid to feasibility
     feasibility = torch::sigmoid(feasibility);
-    int verbose = rai::getParameter<int>("GNN/verbose", 0);
     
     // Apply softplus to quantiles (except first entry)
     feas_quantiles = feas_quantiles.squeeze();
     infeas_quantiles = infeas_quantiles.squeeze();
-    if (feas_quantiles.size(0) > 1) {
+    if (feas_quantiles.dim() > 0 && feas_quantiles.size(0) > 1) {
         feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
-    if (infeas_quantiles.size(0) > 1) {
+    if (infeas_quantiles.dim() > 0 && infeas_quantiles.size(0) > 1) {
         infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
@@ -628,7 +633,7 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         rrt_feas_quantiles = rrt_feas_quantiles.squeeze();  // Remove batch dimension
         
         // Apply softplus to all entries except the first
-        if (rrt_feas_quantiles.size(0) > 1) {
+        if (rrt_feas_quantiles.dim() > 0 && rrt_feas_quantiles.size(0) > 1) {
             rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
                 torch::nn::functional::softplus(rrt_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
         }
@@ -641,7 +646,7 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
             feas_quantiles_vec.push_back(static_cast<int>(std::ceil(feas_accessor[i])));
         }
         feas_quantiles_vec.push_back(200);
-        MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0);
+        MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0, verbose);
         result.append(rrtWaypointsMC);
     }
     torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan).detach().to(torch::kCPU);
@@ -654,11 +659,11 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     // Apply softplus to quantiles (except first entry)
     lgp_feas_quantiles = lgp_feas_quantiles.squeeze();
     lgp_infeas_quantiles = lgp_infeas_quantiles.squeeze();
-    if (lgp_feas_quantiles.size(0) > 1) {
+    if (lgp_feas_quantiles.dim() > 0 && lgp_feas_quantiles.size(0) > 1) {
         lgp_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(lgp_feas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
-    if (lgp_infeas_quantiles.size(0) > 1) {
+    if (lgp_infeas_quantiles.dim() > 0 && lgp_infeas_quantiles.size(0) > 1) {
         lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(lgp_infeas_quantiles.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
@@ -696,13 +701,20 @@ Array<MarkovChain> NodePredictor::GNN_predict_lgp_chains(Configuration& C, Strin
     // Apply softplus to quantiles (except first entry)
     feas_quantiles_tensor = feas_quantiles_tensor.squeeze();
     infeas_quantiles_tensor = infeas_quantiles_tensor.squeeze();
-    if (feas_quantiles_tensor.size(0) > 1) {
+    if (feas_quantiles_tensor.dim() > 0 && feas_quantiles_tensor.size(0) > 1) {
         feas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(feas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}));
     }
-    if (infeas_quantiles_tensor.size(0) > 1) {
+    if (infeas_quantiles_tensor.dim() > 0 && infeas_quantiles_tensor.size(0) > 1) {
         infeas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}) = 
             torch::nn::functional::softplus(infeas_quantiles_tensor.index({torch::indexing::Slice(1, torch::indexing::None)}));
+    }
+    
+    if(gnn_verbose > 1) {
+        std::cout << "LGP predictions (GNN_predict_lgp_chains):" << std::endl;
+        std::cout << "  feasibility shape: " << feasibility.sizes() << ", value: " << feasibility << std::endl;
+        std::cout << "  feas_quantiles shape: " << feas_quantiles_tensor.sizes() << ", values: " << feas_quantiles_tensor << std::endl;
+        std::cout << "  infeas_quantiles shape: " << infeas_quantiles_tensor.sizes() << ", values: " << infeas_quantiles_tensor << std::endl;
     }
     
     // Convert tensors to MarkovChain

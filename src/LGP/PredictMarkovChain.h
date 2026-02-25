@@ -25,6 +25,7 @@ struct NodePredictor {
   String predictionType;  // "GT", "myopicGT", "GNN", or "none"
   String solver;          // "GITTINS" or other
   torch::Device device;   // Device for GNN models
+  int gnn_verbose = 0;    // GNN/verbose from LGP2_GlobalInfo
   
   // GNN models (only initialized if predictionType == "GNN" && solver == "GITTINS")
   std::shared_ptr<ModelPredictor> model_feasibility_lgp;
@@ -65,7 +66,8 @@ MarkovChain get_markov_chain_from_quantiles(
     const std::vector<double>& feas_quantiles,
     const std::vector<double>& infeas_quantiles,
     const std::vector<double>& quantile_levels,
-    double avgFeas
+    double avgFeas,
+    int verbose = 0
 );
 
 // Ground Truth Bandit Process functions

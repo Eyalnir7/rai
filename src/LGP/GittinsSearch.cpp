@@ -50,6 +50,8 @@ void rai::GittinsSearch::step()
         // printFrontier();
     node = queue.pop();
     currentLevel = node->f_prio;
+    // cout << "currentLevel: " << currentLevel << endl;
+    // cout << "node name: " << node->name << endl;
     //    LOG(0) <<"looking at node '" <<*node <<"'";
 
     // widen

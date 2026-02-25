@@ -13,7 +13,7 @@ struct LGP_TAMP_Abstraction{
   virtual Configuration& getConfig() = 0;
   bool useBroadCollisions=false;
   StringA explicitCollisions;
-  RAI_PARAM("LGP/", bool, waypointsCollision, true)
+  RAI_PARAM("LGP/", bool, waypointsCollision, false)
 
   //abstraction of the logic parts: get feasible action sequences
   virtual Array<StringA> getNewActionSequence() = 0;

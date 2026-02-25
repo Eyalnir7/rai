@@ -42,6 +42,7 @@ struct LGP2_GlobalInfo {
   RAI_PARAM("", int, numTaskPlans, 20)
   RAI_PARAM("", rai::String, predictionType, "myopicGT") // GT / myopicGT / none / GNN
   RAI_PARAM("GNN/", rai::String, modelsDir, "models/")
+  RAI_PARAM("GNN/", int, gnn_verbose, 0)
   RAI_PARAM("GITTINS/", int, numWaypoints, 100)
   RAI_PARAM("AStar/", int, AstarVerbose, 1)
   RAI_PARAM("", String, device, "cpu")

@@ -36,7 +36,7 @@ void rai::AStar::step(bool fol) {
     // printFrontier();
     node = queue.pop();
     // downcast the node to a FOL_World_State object
-    if (opt.verbose >= 2 && fol){
+    if (opt.verbose >= 3 && fol){
     if(auto folNode = dynamic_cast<FOL_World_State*>(node)){
       str debug;
       folNode->getDecisionSequence(debug);

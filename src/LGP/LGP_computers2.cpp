@@ -516,6 +516,9 @@ void rai::LGPComp2_OptimizePath::initBanditProcess() {
   auto bp = BanditProcess(std::move(chains));
   bp.nodeType = NodeType::LGPPathNode;
   banditProcess = std::make_unique<rai::BanditProcess>(std::move(bp));
+  cout << "printing lgp path bandit process: " << endl;
+  bp.markovChains.last().print_arrays();
+  cout << "gittins index of this: " << bp.compute_gittins_index(0) << endl;
 }
 
 void rai::LGPComp2_OptimizePath::untimedCompute() {

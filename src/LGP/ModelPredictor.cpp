@@ -2,8 +2,8 @@
 #include <iostream>
 #include <chrono>
 
-ModelPredictor::ModelPredictor(const std::string& model_path, torch::Device device)
-    : device_(device), model_loaded_(false) {
+ModelPredictor::ModelPredictor(const std::string& model_path, torch::Device device, int verbose)
+    : device_(device), model_loaded_(false), verbose_(verbose) {
     try {
         module_ = torch::jit::load(model_path);
         module_.to(device_);
@@ -19,7 +19,7 @@ ModelPredictor::ModelPredictor(const std::string& model_path, torch::Device devi
         
         // Warm-up pass to trigger JIT compilation
         std::cout << "Warming up model..." << std::endl;
-        warmUp();
+        //warmUp();
         std::cout << "Model ready for inference." << std::endl;
     } catch (const c10::Error& e) {
         std::cerr << "Error loading the model from " << model_path << std::endl;
@@ -99,6 +99,7 @@ void ModelPredictor::warmUp() {
 
 torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     torch::Dict<std::string, torch::Tensor> x_dict, times_dict, edge_index_dict, batch_dict;
+    // cout << "in run model forward" << endl;
 
     // IMPORTANT: Every tensor must be explicitly moved to device_
     for (const auto& kv : g.x_dict)
@@ -123,8 +124,9 @@ torch::Tensor ModelPredictor::runModelForward(const HeteroGraph& g) {
     torch::IValue output = module_.forward(inputs);
     auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
-    if(rai::getParameter<int>("GNN/verbose", 1) > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
+    if(verbose_ > 0) std::cout << "Forward pass took " << elapsed.count() << " seconds." << std::endl;
     
-    // ... existing timing and return logic ...
-    return output.toTensor();
+    torch::Tensor result = output.toTensor();
+    if(verbose_ > 1) std::cout << "Model output: " << result << std::endl;
+    return result;
 }

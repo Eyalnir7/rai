@@ -31,7 +31,7 @@ public:
      * @param model_path Path to the scripted PyTorch model (.pt file)
      * @param device Torch device to use (default: CPU)
      */
-    ModelPredictor(const std::string& model_path, torch::Device device = torch::kCPU);    
+    ModelPredictor(const std::string& model_path, torch::Device device = torch::kCPU, int verbose = 0);    
     /**
      * @brief Destructor - cleans up model resources
      */
@@ -64,6 +64,7 @@ private:
     torch::jit::script::Module module_;
     torch::Device device_;
     bool model_loaded_;
+    int verbose_ = 0;
     
     /**
      * @brief Run the model forward pass with the HeteroGraph

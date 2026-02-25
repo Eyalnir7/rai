@@ -76,7 +76,7 @@ std::pair<int, double> BanditProcess::compute_gittins_index(double state) const 
     // gittins_index = numerator/(1/(1-beta)-denominator_aux)
     const double denom = 1.0 / (1.0 - beta) - denominator_aux;
     const double gittins_index = numerator / denom;
-    
+
     return std::make_pair(stopping_time, gittins_index);
 }
 
