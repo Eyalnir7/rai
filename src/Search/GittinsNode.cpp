@@ -82,6 +82,7 @@ double GittinsNode::computePriority() {
         double compute_units_double = static_cast<double>(compute_units);
         gittins_c_tot = -rai::cpuTime();
         auto [st, gittins_index] = banditProcess->compute_gittins_index(compute_units_double);
+        // cout << "gittins index: " << gittins_index << " of node: " << name << endl;
         gittins_c_tot += rai::cpuTime();
         stopping_time = st; // Store stopping_time for use in compute()
         // if(getNodeType() == rai::NodeType::RRTNode){

@@ -31,9 +31,25 @@ void rai::GittinsSearch::step()
     // pop
     if (root->numSkeletonsTried == root->children.N)
     {
+        //iterate through chilren of root and add new waypoint nodes for these skeletons
+        for(TreeSearchNode *skeletonChild : root->children)
+        {
+            int n = skeletonChild->getNumDecisions();
+            uint createN = n;
+            int currentNumberOfChildren = skeletonChild->children.N;
+
+            for (uint i = 0; i < createN; i++)
+            {
+                NodeP child = dynamic_cast<GittinsNode*>(skeletonChild)->transitionToGittinsNode(currentNumberOfChildren+i);
+                child->ID = mem.N;
+                mem.append(child);
+                addToQueue(child.get());
+            }
+        }
+
         if (opt.verbose >= 1)
             cout << "Adding new skeletons to root node" << endl;
-        for (int i = 0; i < opt.numTaskPlans; i++)
+        for (int i = 0; i < root->getNumDecisions(); i++)
         {
             NodeP skeletonNode = root->transitionToGittinsNode(root->children.N);
             skeletonNode->ID = mem.N;
@@ -220,7 +236,7 @@ void rai::GittinsSearch::printFrontier() const
             continue;
         }
 
-        std::cout << std::setw(8) << std::fixed << std::setprecision(3) << node->f_prio
+        std::cout << std::setw(8) << std::fixed << node->f_prio
                   << " | " << std::setw(9) << node->name();
 
         // Check if the node is a GittinsNode and print its TaskPlan

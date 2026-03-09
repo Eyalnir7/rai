@@ -38,8 +38,7 @@ ModelPredictor::~ModelPredictor() {
 
 torch::Tensor ModelPredictor::predict(rai::Configuration& C, const StringAA& task_plan, int action_num) {
     if (!model_loaded_) {
-        std::cerr << "Model is not loaded. Cannot make predictions." << std::endl;
-        return torch::Tensor();
+        throw std::runtime_error("Model is not loaded. Cannot make predictions. Check that the model file was loaded successfully.");
     }
 
     // Convert configuration and task plan to intermediate heterogeneous data

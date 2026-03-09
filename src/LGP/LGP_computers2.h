@@ -73,7 +73,7 @@ struct LGPComp2_root : GittinsNode {
   virtual void untimedCompute() {}
   // virtual int getNumDecisions(){ return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
     virtual int getNumDecisions(){ 
-      return (info->predictionType == "GT") ? info->numTaskPlans : -1; };
+      return (info->solver == "GITTINS") ? info->numTaskPlans : -1; };
 //    virtual double effortHeuristic(){ return 11.+10.; }
   virtual double branchingPenalty_child(int i);
 

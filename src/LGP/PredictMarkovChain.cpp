@@ -23,12 +23,13 @@ std::string findModelFile(const std::string& model_dir, const std::string& patte
       }
     }
   } catch (const std::exception& e) {
-    std::cout << "Error searching for model file in " << model_dir << ": " << e.what() << std::endl;
+    throw std::runtime_error("Error searching for model file in '" + model_dir + "': " + e.what());
   }
   
-  // If not found, return the original path for backward compatibility
-  std::cout << "Warning: Could not find model file matching '" << pattern << "' in " << model_dir << std::endl;
-  return model_dir + pattern + ".pt";
+  throw std::runtime_error(
+    "Could not find model file matching pattern '" + pattern + "' in directory '" + model_dir + "'. "
+    "Make sure scripted model files named 'model_<TASK>_<NODETYPE>_*.pt' exist in that directory."
+  );
 }
 
 //===========================================================================
@@ -625,7 +626,12 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
     }
 
     Array<MarkovChain> result;
-    result.append(convert_tensors_to_markov_chain(feasibility, feas_quantiles, infeas_quantiles));
+    MarkovChain waypointsMC = convert_tensors_to_markov_chain(feasibility, feas_quantiles, infeas_quantiles);
+    if(verbose > 0){
+        cout << "waypoints markovChain: " << endl;
+        waypointsMC.print_arrays();
+    }
+    result.append(waypointsMC);
     int planLength = taskPlan.N;
     Array<MarkovChain> rrtChains;;
     for(int i = 0; i < planLength; ++i) {
@@ -647,6 +653,11 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         }
         feas_quantiles_vec.push_back(200);
         MarkovChain rrtWaypointsMC = get_markov_chain_from_quantiles(feas_quantiles_vec, {}, std::vector<double>{0.1, 0.3, 0.5, 0.7, 0.9, 1.0}, 1.0, verbose);
+        if(verbose > 0){
+            cout << "rrt action " << i << " markovChain: " << endl;
+            rrtWaypointsMC.print_arrays();
+        
+        }
         result.append(rrtWaypointsMC);
     }
     torch::Tensor lgp_feasibility = model_feasibility_lgp->predict(C, taskPlan).detach().to(torch::kCPU);
@@ -674,7 +685,12 @@ Array<MarkovChain> NodePredictor::GNN_predict_waypoints_chains(Configuration& C,
         std::cout << "  infeas_quantiles shape: " << lgp_infeas_quantiles.sizes() << ", values: " << lgp_infeas_quantiles << std::endl;
     }
     
-    result.append(convert_tensors_to_markov_chain(lgp_feasibility, lgp_feas_quantiles, lgp_infeas_quantiles));
+    MarkovChain lgpMC = convert_tensors_to_markov_chain(lgp_feasibility, lgp_feas_quantiles, lgp_infeas_quantiles);
+    if(verbose > 0){
+        cout << "lgp markovChain: " << endl;
+        lgpMC.print_arrays();
+    }
+    result.append(lgpMC);
     // std::cout << "=== End GNN_predict_waypoints_chains ===\n" << std::endl;
     return result;
 }
