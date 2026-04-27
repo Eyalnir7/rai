@@ -3,9 +3,20 @@
 #include <iostream>
 #include <sstream>
 #include <Core/util.h>
+#include <cstdlib>
+
+// Get project root from environment or use fallback
+std::string getProjectRoot() {
+  const char* project_root = std::getenv("PROJECT_ROOT");
+  if (project_root) {
+    return std::string(project_root);
+  }
+  return "";  // fallback
+}
 
 DataManger::DataManger() : initialized(false) {
-    rai::String dataPath = rai::getParameter<rai::String>("dataPath", "/home/eyal/Documents/code_repos/lgp-pddl/25-newSolvers/FolTest/data/GTSimICT");
+    std::string projectRoot = getProjectRoot();
+    rai::String dataPath = rai::getParameter<rai::String>("dataPath", (projectRoot + "/GittinsSearchLGP/FolTest/data/GTSimICT").c_str());
     initialize(dataPath.p);
 }
 

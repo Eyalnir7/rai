@@ -7,7 +7,8 @@
 using namespace rai;
 
 // ModelPredictor& getModelPredictorSingleton() {
-//     static ModelPredictor predictor("/home/eyal/projects/lgp-pddl/25-newSolvers/FolTest/Learning/trained_constraint_gnn_scripted.pt");
+//     // Use PROJECT_ROOT environment variable: $PROJECT_ROOT/GittinsSearchLGP/FolTest/Learning/trained_constraint_gnn_scripted.pt
+//     static ModelPredictor predictor(/* path from PROJECT_ROOT env var */);
 //     return predictor;
 // }
 
